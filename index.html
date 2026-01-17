@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="vi" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thiệp Mời Kỷ Yếu - 12 Chuyên Tin | Cyberpunk Edition</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Anime.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <!-- Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600&family=Montserrat:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Montserrat', 'sans-serif'],
+                        mono: ['"Fira Code"', 'monospace'],
+                    },
+                    colors: {
+                        bgDark: '#0d1117',
+                        bgDarker: '#010409',
+                        cardDark: '#161b22',
+                        borderDark: '#30363d',
+                        accent: '#58a6ff',      /* Blue */
+                        keyword: '#ff7b72',     /* Red/Pink */
+                        string: '#a5d6ff',      /* Light Blue */
+                        func: '#d2a8ff',        /* Purple */
+                        variable: '#79c0ff',    /* Cyan */
+                        comment: '#8b949e',     /* Grey */
+                        success: '#238636',     /* Green */
+                        neonPink: '#f472b6',
+                        neonGreen: '#4ade80',
+                        warning: '#d29922',     /* Yellow/Orange */
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'float-delayed': 'float 6s ease-in-out 3s infinite',
+                        'pulse-glow': 'pulseGlow 3s infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0) rotate(0deg)' },
+                            '50%': { transform: 'translateY(-15px) rotate(1deg)' },
+                        },
+                        pulseGlow: {
+                            '0%, 100%': { opacity: 1, filter: 'drop-shadow(0 0 5px rgba(88, 166, 255, 0.5))' },
+                            '50%': { opacity: 0.7, filter: 'drop-shadow(0 0 15px rgba(88, 166, 255, 0.8))' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* --- Base & Scrollbar --- */
+        body {
+            background-color: #0d1117;
+            color: #e6edf3;
+            overflow-x: hidden;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+        }
+
+        /* Nav Header */
+        .nav-link {
+            position: relative;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: #58a6ff;
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0d1117;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #30363d;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #58a6ff;
+        }
+
+        /* --- Background Effects --- */
+        #canvas-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+            background: radial-gradient(circle at 50% 50%, #161b22 0%, #0d1117 80%, #010409 100%);
+        }
+
+        .cyber-grid {
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            background-image:
+                linear-gradient(rgba(56, 139, 253, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(56, 139, 253, 0.1) 1px, transparent 1px);
+            background-size: 40px 40px;
+            transform: perspective(1000px) rotateX(20deg);
+            opacity: 0.4;
+            will-change: transform;
+            transform-origin: 50% 50%;
+        }
+
+        .parallax-wrapper {
+            position: absolute;
+            will-change: transform;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* --- RAW CODE STYLE --- */
+        .raw-code-block {
+            font-family: 'Fira Code', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre;
+            text-align: left;
+            color: #8b949e;
+            text-shadow: none;
+            transition: transform 0.1s ease-out;
+            filter: blur(2px);
+            opacity: 0.15 !important;
+        }
+
+        /* --- MOBILE OPTIMIZATION --- */
+        @media (max-width: 768px) {
+            .cyber-grid {
+                opacity: 0.15;
+            }
+
+            .raw-code-block {
+                opacity: 0.08 !important;
+                filter: blur(3px);
+            }
+
+            .glass-panel {
+                background: rgba(1, 4, 9, 0.96) !important;
+                backdrop-filter: blur(20px);
+                border: 1px solid rgba(88, 166, 255, 0.3) !important;
+            }
+
+            .timeline-card {
+                background: rgba(22, 27, 34, 0.98) !important;
+                border: 1px solid rgba(48, 54, 61, 1);
+            }
+        }
+
+        .floating-icon {
+            opacity: 0.6;
+            filter: drop-shadow(0 0 10px rgba(88, 166, 255, 0.3));
+        }
+
+        .floating-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .binary-particle {
+            position: absolute;
+            color: #238636;
+            font-size: 14px;
+            font-weight: bold;
+            opacity: 0.3;
+            font-family: 'Fira Code', monospace;
+        }
+
+        /* --- Content Layout --- */
+        .content-layer {
+            position: relative;
+            z-index: 10;
+        }
+
+        .glass-panel {
+            background: rgba(22, 27, 34, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(88, 166, 255, 0.2);
+            box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 1);
+        }
+
+        .timeline-card {
+            background: rgba(22, 27, 34, 0.95);
+            border: 1px solid #30363d;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .typing::after {
+            content: '▋';
+            animation: blink 1s step-end infinite;
+            color: #58a6ff;
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0;
+            }
+        }
+
+        .text-glow {
+            text-shadow: 0 0 15px rgba(88, 166, 255, 0.8);
+        }
+
+        .hl-keyword {
+            color: #ff7b72;
+            font-weight: 500;
+        }
+
+        .hl-func {
+            color: #d2a8ff;
+            font-weight: 500;
+        }
+
+        .hl-string {
+            color: #a5d6ff;
+        }
+
+        .hl-comment {
+            color: #8b949e;
+            font-style: italic;
+        }
+
+        .hl-var {
+            color: #79c0ff;
+        }
+
+        .hl-number {
+            color: #79c0ff;
+        }
+    </style>
+</head>
+
+<body class="font-sans antialiased selection:bg-accent selection:text-white">
+
+    <!-- NAVIGATION HEADER -->
+    <nav
+        class="fixed top-0 left-0 w-full z-[100] bg-[#0d1117]/80 backdrop-blur-md border-b border-borderDark/50 transition-all duration-300">
+        <div
+            class="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between md:justify-end space-x-2 md:space-x-8 font-mono text-[10px] md:text-sm">
+            <a href="#" onclick="window.scrollTo({top: 0, behavior: 'smooth'}); return false;"
+                class="nav-link text-gray-300 hover:text-success transition-colors font-bold tracking-wide whitespace-nowrap">
+                &lt;Trang_Chủ /&gt;
+            </a>
+            <a href="#timeline-section"
+                class="nav-link text-gray-300 hover:text-accent transition-colors font-bold tracking-wide whitespace-nowrap">
+                &lt;Lịch_Trình /&gt;
+            </a>
+            <a href="#guestbook"
+                class="nav-link text-gray-300 hover:text-neonPink transition-colors font-bold tracking-wide whitespace-nowrap">
+                &lt;Lưu_Bút /&gt;
+            </a>
+        </div>
+    </nav>
+
+    <!-- BACKGROUND LAYER -->
+    <div id="canvas-wrapper">
+        <div class="cyber-grid"></div>
+        <!-- Elements injected via JS -->
+    </div>
+
+    <!-- MAIN CONTENT LAYER -->
+    <div class="content-layer">
+
+        <!-- HERO SECTION -->
+        <section class="min-h-screen flex flex-col items-center justify-center p-4 relative">
+
+            <div
+                class="glass-panel w-full max-w-lg rounded-2xl overflow-hidden relative hero-card opacity-0 scale-90 transform transition-transform duration-500 hover:scale-[1.01]">
+
+                <!-- Mac Window Header -->
+                <div class="bg-[#010409] px-4 py-3 border-b border-borderDark flex items-center justify-between">
+                    <div class="flex space-x-2 stagger-item">
+                        <div class="w-3 h-3 rounded-full bg-[#ff5f56]"></div>
+                        <div class="w-3 h-3 rounded-full bg-[#ffbd2e]"></div>
+                        <div class="w-3 h-3 rounded-full bg-[#27c93f]"></div>
+                    </div>
+                    <div class="text-xs font-mono text-gray-500 stagger-item flex items-center">
+                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                        </svg>
+                        invitation.tsx — 12_Chuyen_Tin
+                    </div>
+                    <div class="w-10"></div>
+                </div>
+
+                <!-- Main Content -->
+                <div class="relative z-10 text-center pt-8 pb-4 px-6 stagger-item">
+                    <p class="text-func font-mono text-sm mb-2 opacity-80 font-bold">&lt;Invitation /&gt;</p>
+                    <h1 class="text-5xl md:text-6xl font-extrabold text-white mb-2 tracking-tight drop-shadow-2xl">
+                        KỶ YẾU <span class="text-accent inline-block anime-pop text-glow">2026</span>
+                    </h1>
+                    <p class="text-comment font-mono text-xs mt-2 flex justify-center items-center gap-2 font-semibold">
+                        <span class="w-2 h-2 bg-success rounded-full animate-pulse"></span>
+                        // Loading memories...
+                    </p>
+                </div>
+
+                <div class="relative z-10 px-6 py-6 space-y-6">
+
+                    <!-- Code Message Block -->
+                    <div
+                        class="bg-[#0d1117] p-5 rounded-lg border border-borderDark font-mono text-sm leading-relaxed shadow-inner stagger-item group hover:border-accent transition-colors duration-300">
+                        <div class="flex text-xs text-gray-600 mb-2 select-none">
+                            <span class="mr-4">1</span>
+                            <span class="mr-4">2</span>
+                            <span class="mr-4">3</span>
+                        </div>
+                        <div class="pl-2 border-l-2 border-gray-700 group-hover:border-accent transition-colors">
+                            <span class="text-keyword">const</span> <span class="text-func">message</span> = <span
+                                class="text-string">"</span><span id="typing-text"
+                                class="typing text-white font-medium"></span><span class="text-string">"</span>;
+                        </div>
+                    </div>
+
+                    <!-- Info Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div
+                            class="timeline-card p-4 rounded-xl transition group stagger-item cursor-default hover:border-accent">
+                            <div class="flex items-center mb-2">
+                                <svg class="w-5 h-5 text-accent mr-2 group-hover:animate-spin" fill="none"
+                                    stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span class="text-xs font-mono text-gray-400 uppercase font-bold">const Time =</span>
+                            </div>
+                            <p class="text-white font-bold text-xl drop-shadow-md">07:00</p>
+                            <p class="text-sm text-gray-400 font-medium">Sat, 07/02/2026</p>
+                        </div>
+
+                        <div
+                            class="timeline-card p-4 rounded-xl transition group stagger-item cursor-default hover:border-keyword">
+                            <div class="flex items-center mb-2">
+                                <svg class="w-5 h-5 text-keyword mr-2 animate-bounce" id="icon-loc" fill="none"
+                                    stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z">
+                                    </path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                                <span class="text-xs font-mono text-gray-400 uppercase font-bold">const Location
+                                    =</span>
+                            </div>
+                            <p class="text-white font-bold text-sm leading-snug drop-shadow-md">THPT Chuyên Nguyễn Tất
+                                Thành</p>
+                            <p class="text-xs text-gray-500 mt-1 font-medium">Lào Cai</p>
+                        </div>
+                    </div>
+
+                    <!-- Terminal Countdown -->
+                    <div
+                        class="bg-[#010409] rounded-lg p-4 border border-borderDark font-mono text-xs stagger-item transform transition hover:scale-[1.02] duration-300 shadow-xl">
+                        <div class="flex justify-between text-gray-500 mb-2 border-b border-gray-800 pb-1">
+                            <span>TERMINAL</span>
+                            <span>zsh</span>
+                        </div>
+                        <div class="text-gray-300">
+                            <span class="text-success font-bold">student@12tin:~$</span> ./countdown_launch.sh<br>
+                            <span class="text-gray-500">> Initiating sequence... done.</span><br>
+                            <div class="grid grid-cols-4 gap-2 mt-3 text-center select-none">
+                                <div class="bg-cardDark rounded py-1 border border-gray-800"><span id="d"
+                                        class="text-white font-bold text-lg countdown-digit">00</span><span
+                                        class="text-[10px] block text-gray-500">DAYS</span></div>
+                                <div class="bg-cardDark rounded py-1 border border-gray-800"><span id="h"
+                                        class="text-white font-bold text-lg countdown-digit">00</span><span
+                                        class="text-[10px] block text-gray-500">HRS</span></div>
+                                <div class="bg-cardDark rounded py-1 border border-gray-800"><span id="m"
+                                        class="text-white font-bold text-lg countdown-digit">00</span><span
+                                        class="text-[10px] block text-gray-500">MIN</span></div>
+                                <div class="bg-cardDark rounded py-1 border border-gray-800"><span id="s"
+                                        class="text-accent font-bold text-lg countdown-digit">00</span><span
+                                        class="text-[10px] block text-gray-500">SEC</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer Info -->
+                    <div class="grid grid-cols-2 gap-4 text-xs pt-2 border-t border-borderDark font-mono stagger-item">
+                        <div>
+                            <span class="text-comment block mb-1 font-bold">// Dress Code</span>
+                            <span class="text-string font-medium">"Đẹp & Tự tin"</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-comment block mb-1 font-bold">// Contact Host</span>
+                            <div class="text-white font-bold">Vũ Thành Nam</div>
+                            <div class="flex justify-end space-x-3 mt-1">
+                                <a href="https://www.facebook.com/namvt.08.hsr" target="_blank"
+                                    class="text-gray-400 hover:text-blue-500 transition">Facebook</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- TIMELINE SECTION (Updated with New Data) -->
+                <!-- TIMELINE SECTION (Auto-Generated) -->
+        <section id="timeline-section" class="py-24 px-4 relative z-10 max-w-4xl mx-auto scroll-mt-32">
+            <div class="text-center mb-16 scroll-anim-title">
+                <h2 class="text-3xl font-bold text-white mb-2 font-mono drop-shadow-lg">&lt;Schedule /&gt;</h2>
+                <p class="text-comment text-sm font-mono font-medium">// Execute Order: Yearbook2026</p>
+            </div>
+
+            <div class="relative">
+                <!-- Vertical Line (Global) -->
+                <div class="absolute left-6 md:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-borderDark to-transparent transform md:-translate-x-1/2"></div>
+
+                <!-- Item 1: Tập trung -->
+                <div class="relative mb-12 scroll-anim-item group">
+                    <!-- Flex Container: Row on Mobile (Icon Left, Content Right), Row on Desktop (ZigZag) -->
+                    <div class="flex flex-row md:items-center w-full">
+                        <div class="w-12 md:w-2/12 flex-none flex justify-center relative z-10 order-1 md:order-2 px-0 md:px-0">
+                            <div class="w-8 h-8 bg-[#0d1117] border border-accent rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition duration-300">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+                            </div>
+                        </div>
+                        <div class="hidden md:block md:w-5/12 md:order-1 text-right pr-8">
+                            <span class="text-accent font-mono text-xl font-bold block drop-shadow-md">07:00</span>
+                            <span class="text-gray-500 text-xs font-mono font-medium">Bắt đầu ngày mới</span>
+                        </div>
+                        <div class="flex-1 md:w-5/12 order-2 md:order-3 pl-4 md:pl-8">
+                            <div class="md:hidden mb-2">
+                                <span class="text-accent font-mono text-lg font-bold block">07:00</span>
+                                <span class="text-gray-500 text-xs font-mono">Bắt đầu ngày mới</span>
+                            </div>
+                            <div class="timeline-card p-4 rounded-lg hover:border-accent transition duration-300 shadow-lg">
+                                <h3 class="text-white font-bold mb-1 font-mono text-lg drop-shadow-sm">Tập trung <span class="text-accent text-sm font-normal">.init()</span></h3>
+                                <p class="text-sm text-gray-300 leading-relaxed font-medium">Tập trung tại sân trường. Chủ động hoàn thiện makeup, trang phục và ăn sáng.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Item 2: Chụp tập thể -->
+                <div class="relative mb-12 scroll-anim-item group">
+                    <!-- Flex Container: Row on Mobile (Icon Left, Content Right), Row on Desktop (ZigZag) -->
+                    <div class="flex flex-row md:items-center w-full">
+                        <div class="w-12 md:w-2/12 flex-none flex justify-center relative z-10 order-1 md:order-2 px-0 md:px-0">
+                            <div class="w-8 h-8 bg-[#0d1117] border border-keyword rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition duration-300">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                            </div>
+                        </div>
+                        <div class="hidden md:block md:w-5/12 md:order-3 text-left pl-8">
+                            <span class="text-keyword font-mono text-xl font-bold block drop-shadow-md">07:30 - 08:30</span>
+                            <span class="text-gray-500 text-xs font-mono font-medium">Quan trọng nhất</span>
+                        </div>
+                        <div class="flex-1 md:w-5/12 order-2 md:order-1 pl-4 md:pr-8">
+                            <div class="md:hidden mb-2">
+                                <span class="text-keyword font-mono text-lg font-bold block">07:30 - 08:30</span>
+                                <span class="text-gray-500 text-xs font-mono">Quan trọng nhất</span>
+                            </div>
+                            <div class="timeline-card p-4 rounded-lg hover:border-keyword transition duration-300 shadow-lg">
+                                <h3 class="text-white font-bold mb-1 font-mono text-lg drop-shadow-sm">Chụp tập thể <span class="text-keyword text-sm font-normal">.group_render()</span></h3>
+                                <p class="text-sm text-gray-300 leading-relaxed font-medium">Ưu tiên hàng đầu: Cần có mặt đầy đủ, đúng giờ để chụp tập thể trước (Áo dài/Vest, cử nhân).</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Item 3: Chụp cá nhân -->
+                <div class="relative mb-12 scroll-anim-item group">
+                    <!-- Flex Container: Row on Mobile (Icon Left, Content Right), Row on Desktop (ZigZag) -->
+                    <div class="flex flex-row md:items-center w-full">
+                        <div class="w-12 md:w-2/12 flex-none flex justify-center relative z-10 order-1 md:order-2 px-0 md:px-0">
+                            <div class="w-8 h-8 bg-[#0d1117] border border-success rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition duration-300">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            </div>
+                        </div>
+                        <div class="hidden md:block md:w-5/12 md:order-1 text-right pr-8">
+                            <span class="text-success font-mono text-xl font-bold block drop-shadow-md">08:30 - 09:30</span>
+                            <span class="text-gray-500 text-xs font-mono font-medium">Solo Mode</span>
+                        </div>
+                        <div class="flex-1 md:w-5/12 order-2 md:order-3 pl-4 md:pl-8">
+                            <div class="md:hidden mb-2">
+                                <span class="text-success font-mono text-lg font-bold block">08:30 - 09:30</span>
+                                <span class="text-gray-500 text-xs font-mono">Solo Mode</span>
+                            </div>
+                            <div class="timeline-card p-4 rounded-lg hover:border-success transition duration-300 shadow-lg">
+                                <h3 class="text-white font-bold mb-1 font-mono text-lg drop-shadow-sm">Chụp cá nhân <span class="text-success text-sm font-normal">.portrait_mode()</span></h3>
+                                <p class="text-sm text-gray-300 leading-relaxed font-medium">Áo dài/Vest, cử nhân. Thực hiện theo sự điều phối của ekip để đảm bảo tiến độ.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Item 4: Gia đình & Bạn bè -->
+                <div class="relative mb-12 scroll-anim-item group">
+                    <!-- Flex Container: Row on Mobile (Icon Left, Content Right), Row on Desktop (ZigZag) -->
+                    <div class="flex flex-row md:items-center w-full">
+                        <div class="w-12 md:w-2/12 flex-none flex justify-center relative z-10 order-1 md:order-2 px-0 md:px-0">
+                            <div class="w-8 h-8 bg-[#0d1117] border border-func rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition duration-300">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                            </div>
+                        </div>
+                        <div class="hidden md:block md:w-5/12 md:order-3 text-left pl-8">
+                            <span class="text-func font-mono text-xl font-bold block drop-shadow-md">09:30 - 10:45</span>
+                            <span class="text-gray-500 text-xs font-mono font-medium">Kỷ niệm ấm áp</span>
+                        </div>
+                        <div class="flex-1 md:w-5/12 order-2 md:order-1 pl-4 md:pr-8">
+                            <div class="md:hidden mb-2">
+                                <span class="text-func font-mono text-lg font-bold block">09:30 - 10:45</span>
+                                <span class="text-gray-500 text-xs font-mono">Kỷ niệm ấm áp</span>
+                            </div>
+                            <div class="timeline-card p-4 rounded-lg hover:border-func transition duration-300 shadow-lg">
+                                <h3 class="text-white font-bold mb-1 font-mono text-lg drop-shadow-sm">Gia đình & Bạn bè <span class="text-func text-sm font-normal">.guest_access()</span></h3>
+                                <p class="text-sm text-gray-300 leading-relaxed font-medium">Thời gian tự do chụp ảnh với khách mời, gia đình và bạn bè.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Item 5: Chụp tại phòng học -->
+                <div class="relative mb-12 scroll-anim-item group">
+                    <!-- Flex Container: Row on Mobile (Icon Left, Content Right), Row on Desktop (ZigZag) -->
+                    <div class="flex flex-row md:items-center w-full">
+                        <div class="w-12 md:w-2/12 flex-none flex justify-center relative z-10 order-1 md:order-2 px-0 md:px-0">
+                            <div class="w-8 h-8 bg-[#0d1117] border border-variable rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition duration-300">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                            </div>
+                        </div>
+                        <div class="hidden md:block md:w-5/12 md:order-1 text-right pr-8">
+                            <span class="text-variable font-mono text-xl font-bold block drop-shadow-md">10:45 - 11:30</span>
+                            <span class="text-gray-500 text-xs font-mono font-medium">Back to Class</span>
+                        </div>
+                        <div class="flex-1 md:w-5/12 order-2 md:order-3 pl-4 md:pl-8">
+                            <div class="md:hidden mb-2">
+                                <span class="text-variable font-mono text-lg font-bold block">10:45 - 11:30</span>
+                                <span class="text-gray-500 text-xs font-mono">Back to Class</span>
+                            </div>
+                            <div class="timeline-card p-4 rounded-lg hover:border-variable transition duration-300 shadow-lg">
+                                <h3 class="text-white font-bold mb-1 font-mono text-lg drop-shadow-sm">Chụp tại phòng học <span class="text-variable text-sm font-normal">.class_memories()</span></h3>
+                                <p class="text-sm text-gray-300 leading-relaxed font-medium">Cả lớp di chuyển nhanh chóng lên lớp theo hướng dẫn.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Item 6: Nghỉ trưa -->
+                <div class="relative mb-12 scroll-anim-item group">
+                    <!-- Flex Container: Row on Mobile (Icon Left, Content Right), Row on Desktop (ZigZag) -->
+                    <div class="flex flex-row md:items-center w-full">
+                        <div class="w-12 md:w-2/12 flex-none flex justify-center relative z-10 order-1 md:order-2 px-0 md:px-0">
+                            <div class="w-8 h-8 bg-[#0d1117] border border-warning rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition duration-300">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            </div>
+                        </div>
+                        <div class="hidden md:block md:w-5/12 md:order-3 text-left pl-8">
+                            <span class="text-warning font-mono text-xl font-bold block drop-shadow-md">11:30 - 13:30</span>
+                            <span class="text-gray-500 text-xs font-mono font-medium">Nạp năng lượng</span>
+                        </div>
+                        <div class="flex-1 md:w-5/12 order-2 md:order-1 pl-4 md:pr-8">
+                            <div class="md:hidden mb-2">
+                                <span class="text-warning font-mono text-lg font-bold block">11:30 - 13:30</span>
+                                <span class="text-gray-500 text-xs font-mono">Nạp năng lượng</span>
+                            </div>
+                            <div class="timeline-card p-4 rounded-lg hover:border-warning transition duration-300 shadow-lg">
+                                <h3 class="text-white font-bold mb-1 font-mono text-lg drop-shadow-sm">Nghỉ trưa <span class="text-warning text-sm font-normal">.recharge()</span></h3>
+                                <p class="text-sm text-gray-300 leading-relaxed font-medium">Ăn uống, nghỉ ngơi, dặm lại makeup và thay trang phục mới.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Item 7: Concept Thanh Xuân -->
+                <div class="relative mb-12 scroll-anim-item group">
+                    <!-- Flex Container: Row on Mobile (Icon Left, Content Right), Row on Desktop (ZigZag) -->
+                    <div class="flex flex-row md:items-center w-full">
+                        <div class="w-12 md:w-2/12 flex-none flex justify-center relative z-10 order-1 md:order-2 px-0 md:px-0">
+                            <div class="w-8 h-8 bg-[#0d1117] border border-neonPink rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition duration-300">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </div>
+                        </div>
+                        <div class="hidden md:block md:w-5/12 md:order-1 text-right pr-8">
+                            <span class="text-neonPink font-mono text-xl font-bold block drop-shadow-md">13:30 - 17:30</span>
+                            <span class="text-gray-500 text-xs font-mono font-medium">Kết thúc rực rỡ</span>
+                        </div>
+                        <div class="flex-1 md:w-5/12 order-2 md:order-3 pl-4 md:pl-8">
+                            <div class="md:hidden mb-2">
+                                <span class="text-neonPink font-mono text-lg font-bold block">13:30 - 17:30</span>
+                                <span class="text-gray-500 text-xs font-mono">Kết thúc rực rỡ</span>
+                            </div>
+                            <div class="timeline-card p-4 rounded-lg hover:border-neonPink transition duration-300 shadow-lg">
+                                <h3 class="text-white font-bold mb-1 font-mono text-lg drop-shadow-sm">Concept Thanh Xuân <span class="text-neonPink text-sm font-normal">.final_chapter()</span></h3>
+                                <p class="text-sm text-gray-300 leading-relaxed font-medium">Chụp concept thanh xuân vườn trường. Lưu giữ những khoảnh khắc hồn nhiên nhất.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- GUESTBOOK SECTION -->
+        <section id="guestbook" class="py-24 px-4 relative z-10 max-w-3xl mx-auto">
+            <div class="text-center mb-12 scroll-anim-title">
+                <h2 class="text-3xl font-bold text-white mb-2 font-mono drop-shadow-lg">&lt;Guestbook /&gt;</h2>
+                <p class="text-comment text-sm font-mono font-medium">// Leave your trace in the system</p>
+            </div>
+
+            <!-- Guestbook Form -->
+            <div class="glass-panel p-6 rounded-xl mb-12 scroll-anim-item">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-accent text-xs font-mono font-bold mb-1">&lt;Input name="User"
+                            /&gt;</label>
+                        <input type="text" id="gb-name" placeholder="Mật danh của bạn..."
+                            class="w-full bg-[#0d1117] border border-borderDark rounded p-3 text-white font-mono text-sm focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all placeholder-gray-600">
+                    </div>
+                    <div>
+                        <label class="block text-keyword text-xs font-mono font-bold mb-1">&lt;Textarea name="Message"
+                            /&gt;</label>
+                        <textarea id="gb-message" rows="3" placeholder="Gửi lời nhắn tới vũ trụ..."
+                            class="w-full bg-[#0d1117] border border-borderDark rounded p-3 text-white font-mono text-sm focus:border-keyword focus:ring-1 focus:ring-keyword outline-none transition-all placeholder-gray-600"></textarea>
+                    </div>
+                    <button onclick="submitGuestbook()"
+                        class="w-full py-3 bg-cardDark border border-success text-success font-bold font-mono rounded hover:bg-success hover:text-white transition-all duration-300 group relative overflow-hidden">
+                        <span class="relative z-10">PUSH TO DATABASE</span>
+                        <div class="absolute inset-0 bg-success opacity-0 group-hover:opacity-20 transition-opacity">
+                        </div>
+                    </button>
+                    <p id="gb-status" class="text-center text-xs font-mono h-4"></p>
+                </div>
+            </div>
+
+            <!-- Message List -->
+            <div id="gb-list" class="space-y-6">
+                <!-- Messages will be injected here -->
+            </div>
+        </section>
+
+        <!-- FOOTER SECTION -->
+        <section
+            class="py-20 text-center px-4 relative z-10 border-t border-borderDark bg-[#0d1117]/95 backdrop-blur-md">
+            <div class="scroll-anim-footer max-w-xl mx-auto">
+                <h2 class="text-2xl text-white font-bold mb-6 font-mono drop-shadow-md">git commit -m "Lưu bút"</h2>
+
+                <button onclick="document.getElementById('guestbook').scrollIntoView({behavior: 'smooth'})"
+                    class="group py-3 px-8 bg-white text-bgDark hover:bg-accent hover:text-white font-bold rounded-full shadow-lg transition-all duration-300 inline-flex items-center space-x-2 transform hover:scale-105 active:scale-95 ring-4 ring-transparent hover:ring-accent/30">
+                    <span class="font-mono">VIẾT LƯU BÚT</span>
+                    <svg class="w-4 h-4 group-hover:translate-x-1 transition" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                        </path>
+                    </svg>
+                </button>
+                <p id="confirm-msg-bottom"
+                    class="text-center text-green-400 font-mono text-sm hidden mt-4 bg-cardDark inline-block px-4 py-2 rounded border border-success/30 font-bold">
+                    > Success! Ticket pushed to database.
+                </p>
+            </div>
+
+            <footer class="mt-20 text-xs text-gray-500 font-mono font-medium">
+                <div class="flex justify-center items-center space-x-4 mb-4">
+                    <a href="https://www.facebook.com/namvt.08.hsr" target="_blank"
+                        class="hover:text-accent cursor-pointer transition">Vũ Thành Nam</a>
+                </div>
+                <p>© 2026 Yearbook Project. All bugs are features.</p>
+            </footer>
+        </section>
+    </div>
+
+    <!-- SCRIPT LOGIC -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            initBackground();
+            initAnimations();
+            startTyping();
+            startCountdown();
+            initScrollAnimations();
+        });
+
+        // --- 1. Background Vibe Coding ---
+        function initBackground() {
+            const container = document.getElementById('canvas-wrapper');
+
+            const codeBlocks = [
+                // 1. Python (Top Left)
+                {
+                    text: `<span class="hl-keyword">import</span> asyncio\n<span class="hl-keyword">from</span> universe <span class="hl-keyword">import</span> Time, Youth\n\n<span class="hl-keyword">class</span> <span class="hl-func">ClassOf2026</span>(LifeEvent):\n    <span class="hl-keyword">def</span> <span class="hl-func">__init__</span>(self):\n        self.id = <span class="hl-string">"BATCH_2026"</span>\n        self.energy = <span class="hl-func">float</span>(<span class="hl-string">'inf'</span>)\n    <span class="hl-keyword">async def</span> <span class="hl-func">loading_memories</span>(self):\n        <span class="hl-func">print</span>(<span class="hl-string">">> INITIALIZING..."</span>)\n        <span class="hl-keyword">for</span> day <span class="hl-keyword">in</span> <span class="hl-func">range</span>(1, 1096):\n            data = <span class="hl-keyword">await</span> Time.extract(day)\n            <span class="hl-keyword">if</span> data.is_precious():\n                self.database.append(data)`,
+                    top: '8%', left: '3%',
+                    speed: 0.15, z: 1.0
+                },
+                // 2. C++ (Top Right)
+                {
+                    text: `<span class="hl-keyword">#include</span> &lt;iostream&gt;\n<span class="hl-keyword">#include</span> &lt;vector&gt;\n<span class="hl-keyword">using namespace</span> std;\n\n<span class="hl-comment">// SYSTEM KERNEL: INVITATION</span>\n<span class="hl-keyword">constexpr int</span> GRADUATION_YEAR = <span class="hl-number">2026</span>;\n<span class="hl-keyword">void</span> <span class="hl-func">deploy_event</span>() {\n    cout << <span class="hl-string">">> [KERNEL] ALLOCATING..."</span> << endl;\n    vector&lt;unique_ptr&lt;Student&gt;&gt; squad;\n    <span class="hl-comment">// OVERCLOCKING EXCITEMENT LEVEL</span>\n    <span class="hl-keyword">#pragma</span> omp parallel for\n    <span class="hl-keyword">for</span>(<span class="hl-keyword">int</span> i = 0; i < 100; ++i) {\n        <span class="hl-func">system</span>(<span class="hl-string">"exec ./capture.sh --high-res"</span>);\n    }\n}`,
+                    top: '12%', left: '68%',
+                    speed: -0.15, z: 0.95
+                },
+                // 3. Java (Bottom Left)
+                {
+                    text: `<span class="hl-keyword">package</span> com.highschool.legacy;\n<span class="hl-keyword">import</span> java.time.Instant;\n\n<span class="hl-keyword">public class</span> <span class="hl-func">FinalChapter</span> <span class="hl-keyword">extends</span> Youth {\n    <span class="hl-keyword">private static final</span> String THEME = <span class="hl-string">"CYBER"</span>;\n    <span class="hl-keyword">public static void</span> <span class="hl-func">main</span>(String[] args) {\n        System.out.println(<span class="hl-string">">> JVM STARTED..."</span>);\n        <span class="hl-keyword">try</span> {\n            Invitation invite = <span class="hl-keyword">new</span> <span class="hl-func">InvitationBuilder</span>()\n                .setDestination(<span class="hl-string">"Grand_Hall"</span>)\n                .setTime(Instant.now())\n                .build();\n            invite.broadcast();\n        } <span class="hl-keyword">catch</span> (Exception e) {\n            e.printStackTrace();\n        }\n    }\n}`,
+                    top: '65%', left: '2%',
+                    speed: 0.25, z: 1.1
+                },
+                // 4. React (Bottom Right)
+                {
+                    text: `<span class="hl-keyword">import</span> React, { useState } <span class="hl-keyword">from</span> <span class="hl-string">'react'</span>;\n\n<span class="hl-keyword">const</span> <span class="hl-func">YearbookUI</span> = ({ user }) => {\n  <span class="hl-keyword">const</span> [vibe, setVibe] = <span class="hl-func">useState</span>(<span class="hl-string">"CHILL"</span>);\n\n  <span class="hl-func">useEffect</span>(() => {\n    <span class="hl-keyword">const</span> initialize = <span class="hl-keyword">async</span> () => {\n      console.log(<span class="hl-string">">> CONNECTING..."</span>);\n      setVibe(<span class="hl-string">"HYPE_MODE"</span>);\n    };\n    initialize();\n  }, []);\n\n  <span class="hl-keyword">return</span> (\n    &lt;div className=<span class="hl-string">"terminal"</span>&gt;\n      &lt;code&gt;{\`Scanning...\`}&lt;/code&gt;\n      &lt;button&gt;[ CONFIRM ]&lt;/button&gt;\n    &lt;/div&gt;\n  );\n};`,
+                    top: '60%', left: '60%',
+                    speed: -0.1, z: 1.0
+                },
+                // 5. SQL (Deep Middle)
+                {
+                    text: `<span class="hl-comment">-- DATABASE MIGRATION: YEARBOOK_V2026</span>\n<span class="hl-keyword">START TRANSACTION</span>;\n\n<span class="hl-keyword">SELECT</span> student_id, <span class="hl-func">UPPER</span>(full_name) <span class="hl-keyword">AS</span> LEGEND\n<span class="hl-keyword">FROM</span> students\n<span class="hl-keyword">WHERE</span> grad_year = <span class="hl-string">'2026'</span> \n<span class="hl-keyword">AND</span> status = <span class="hl-string">'READY_TO_SHINE'</span>\n<span class="hl-keyword">ORDER BY</span> charisma_level <span class="hl-keyword">DESC</span>;\n\n<span class="hl-keyword">UPDATE</span> server_logs\n<span class="hl-keyword">SET</span> message = <span class="hl-string">'SYSTEM_OVERLOAD'</span>\n<span class="hl-keyword">WHERE</span> date = <span class="hl-func">CURRENT_DATE</span>;\n\n<span class="hl-keyword">COMMIT</span>;`,
+                    top: '35%', left: '12%',
+                    speed: 0.05, z: 0.8
+                }
+            ];
+
+            codeBlocks.forEach((block, i) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'parallax-wrapper';
+                wrapper.style.top = block.top;
+                wrapper.style.left = block.left;
+
+                wrapper.dataset.speed = block.speed;
+                wrapper.dataset.z = block.z;
+
+                const codeDiv = document.createElement('div');
+                codeDiv.className = 'raw-code-block';
+                codeDiv.style.transform = `scale(${block.z})`;
+                codeDiv.innerHTML = block.text;
+
+                // --- OPTIMIZED OPACITY ---
+                codeDiv.style.opacity = '0.15'; // Giảm opacity xuống rất thấp
+                codeDiv.style.filter = 'blur(2px)';
+
+                wrapper.appendChild(codeDiv);
+
+                wrapper.style.animation = `float 8s ease-in-out ${i * 1.5}s infinite`;
+
+                container.appendChild(wrapper);
+            });
+
+
+            const iconSvgs = [
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-accent"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>',
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-neonPink"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-neonGreen"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>',
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-func"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>'
+            ];
+
+            for (let i = 0; i < 6; i++) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'parallax-wrapper';
+
+                const size = 30 + Math.random() * 50;
+                wrapper.style.width = `${size}px`;
+                wrapper.style.height = `${size}px`;
+
+                let top = Math.random() * 90;
+                let left = Math.random() * 90;
+
+                if (top > 20 && top < 80 && left > 20 && left < 80) {
+                    left = left < 50 ? left - 30 : left + 30;
+                }
+
+                wrapper.style.top = `${top}%`;
+                wrapper.style.left = `${left}%`;
+
+                const speed = (Math.random() - 0.5) * 0.8;
+                const z = 0.5 + Math.random();
+
+                wrapper.dataset.speed = speed;
+                wrapper.dataset.z = z;
+
+                const iconContent = document.createElement('div');
+                iconContent.className = 'floating-icon';
+                iconContent.innerHTML = iconSvgs[Math.floor(Math.random() * iconSvgs.length)];
+                iconContent.style.animation = `floatIcon 8s ease-in-out ${Math.random() * 2}s infinite alternate`;
+
+                wrapper.appendChild(iconContent);
+                container.appendChild(wrapper);
+            }
+
+            // Binary Particles
+            for (let i = 0; i < 40; i++) {
+                const p = document.createElement('div');
+                p.classList.add('binary-particle');
+                p.innerText = Math.random() > 0.5 ? '1' : '0';
+                p.style.left = Math.random() * 100 + 'vw';
+                p.style.top = Math.random() * 100 + 'vh';
+                p.dataset.speed = (Math.random() - 0.5) * 0.2;
+                container.appendChild(p);
+            }
+        }
+
+        // --- 2. Enhanced Smooth Scroll Animation ---
+        function initAnimations() {
+            anime({
+                targets: '.binary-particle',
+                translateY: function () { return anime.random(-100, 100); },
+                translateX: function () { return anime.random(-50, 50); },
+                opacity: function () { return anime.random(0.1, 0.5); },
+                easing: 'easeInOutQuad',
+                duration: 5000,
+                delay: anime.stagger(200),
+                direction: 'alternate',
+                loop: true
+            });
+
+            anime({
+                targets: '.hero-card',
+                opacity: [0, 1],
+                scale: [0.9, 1],
+                duration: 1200,
+                easing: 'easeOutElastic(1, .6)'
+            });
+
+            anime({
+                targets: '.stagger-item',
+                opacity: [0, 1],
+                translateY: [20, 0],
+                delay: anime.stagger(100, { start: 300 }),
+                easing: 'easeOutQuad'
+            });
+
+            anime({
+                targets: '.anime-pop',
+                scale: [0, 1],
+                rotate: '1turn',
+                duration: 1500,
+                delay: 800
+            });
+
+            // --- SMOOTH PARALLAX ENGINE ---
+            let scroll = { current: 0, target: 0 };
+            let mouse = { currentX: 0, targetX: 0, currentY: 0, targetY: 0 };
+            const lerp = (start, end, factor) => start + (end - start) * factor;
+
+            window.addEventListener('scroll', () => { scroll.target = window.scrollY; });
+
+            document.addEventListener('mousemove', (e) => {
+                mouse.targetX = (e.clientX - window.innerWidth / 2) * 0.05;
+                mouse.targetY = (e.clientY - window.innerHeight / 2) * 0.05;
+            });
+
+            function render() {
+                scroll.current = lerp(scroll.current, scroll.target, 0.075);
+                mouse.currentX = lerp(mouse.currentX, mouse.targetX, 0.1);
+                mouse.currentY = lerp(mouse.currentY, mouse.targetY, 0.1);
+
+                const grid = document.querySelector('.cyber-grid');
+                if (grid) {
+                    grid.style.transform = `perspective(1000px) rotateX(20deg) translateY(${scroll.current * 0.2}px) translateX(${mouse.currentX}px)`;
+                }
+
+                const wrappers = document.querySelectorAll('.parallax-wrapper');
+                wrappers.forEach(el => {
+                    const speed = parseFloat(el.dataset.speed || 0);
+                    const z = parseFloat(el.dataset.z || 1);
+                    const yPos = -(scroll.current * speed * 2);
+                    const xMouse = mouse.currentX * z * 0.5;
+                    const yMouse = mouse.currentY * z * 0.5;
+                    el.style.transform = `translate3d(${xMouse}px, ${yPos + yMouse}px, 0)`;
+                });
+
+                const particles = document.querySelectorAll('.binary-particle');
+                particles.forEach(p => {
+                    const speed = parseFloat(p.dataset.speed || 0.05);
+                    const yPos = -(scroll.current * speed * 4);
+                    p.style.marginTop = `${yPos}px`;
+                });
+
+                requestAnimationFrame(render);
+            }
+            render();
+        }
+
+        // --- 3. Typing Effect ---
+        function startTyping() {
+            const textToType = "Chào bạn, Vũ Thành Nam (12 Tin) mời bạn cùng tham gia buổi chụp kỷ yếu. Lưu giữ thanh xuân ngay tại đây!";
+            const typingElement = document.getElementById('typing-text');
+            let index = 0;
+
+            function typeWriter() {
+                if (index < textToType.length) {
+                    typingElement.innerHTML += textToType.charAt(index);
+                    index++;
+                    setTimeout(typeWriter, 40);
+                } else {
+                    document.querySelector('.typing').classList.remove('typing');
+                }
+            }
+            setTimeout(typeWriter, 1500);
+        }
+
+        // --- 4. Countdown Logic ---
+        function startCountdown() {
+            const targetDate = new Date('2026-02-07T07:00:00').getTime(); // Updated to 07:00
+            function update() {
+                const now = new Date().getTime();
+                const distance = targetDate - now;
+
+                if (distance < 0) {
+                    document.getElementById('d').innerText = "00";
+                    return;
+                }
+
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                const format = (n) => n < 10 ? '0' + n : n;
+
+                document.getElementById('d').innerText = format(days);
+                document.getElementById('h').innerText = format(hours);
+                document.getElementById('m').innerText = format(minutes);
+                document.getElementById('s').innerText = format(seconds);
+            }
+            setInterval(update, 1000);
+            update();
+        }
+
+        // --- 5. Scroll Animations (Content) ---
+        function initScrollAnimations() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        anime({
+                            targets: entry.target,
+                            opacity: [0, 1],
+                            translateY: [30, 0],
+                            translateX: [-20, 0],
+                            easing: 'easeOutCubic',
+                            duration: 800
+                        });
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.15 });
+
+            document.querySelectorAll('.scroll-anim-title').forEach(el => {
+                el.style.opacity = 0;
+                observer.observe(el);
+            });
+
+            document.querySelectorAll('.scroll-anim-item').forEach(el => {
+                el.style.opacity = 0;
+                observer.observe(el);
+            });
+
+            const footerObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        anime({
+                            targets: entry.target,
+                            scale: [0.9, 1],
+                            opacity: [0, 1],
+                            easing: 'easeOutBack',
+                            duration: 1000
+                        });
+                        footerObserver.unobserve(entry.target);
+                    }
+                })
+            }, { threshold: 0.5 });
+
+            document.querySelectorAll('.scroll-anim-footer').forEach(el => {
+                el.style.opacity = 0;
+                footerObserver.observe(el);
+            });
+        }
+
+        // --- 6. Interaction ---
+        window.confirmAttendance = function () {
+            const btn = document.querySelector('button');
+            const msg = document.getElementById('confirm-msg-bottom');
+
+            anime({
+                targets: btn,
+                scale: [1, 0.95, 1],
+                duration: 200,
+                easing: 'easeInOutQuad'
+            });
+
+            btn.classList.add('opacity-75', 'cursor-not-allowed');
+            btn.innerHTML = `<span class="font-mono">Processing...</span>`;
+
+            setTimeout(() => {
+                btn.style.display = 'none';
+                msg.classList.remove('hidden');
+                anime({
+                    targets: msg,
+                    opacity: [0, 1],
+                    translateY: [10, 0],
+                    duration: 500,
+                    easing: 'easeOutQuad'
+                });
+            }, 1500);
+        }
+    </script>
+    <!-- MUSIC CONTROLS & AUDIO -->
+    <audio id="bg-music" loop autoplay>
+        <source src="MUSIC/music.mp3" type="audio/mpeg">
+    </audio>
+
+    <button id="music-toggle"
+        class="fixed bottom-6 right-6 z-50 p-3 rounded-full bg-[#0d1117]/90 border border-gray-600 text-gray-400 backdrop-blur-md shadow-[0_0_15px_rgba(0,0,0,0.5)] transition-all duration-300 hover:scale-110 group opacity-70 hover:opacity-100">
+        <div class="group-hover:text-white transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        </div>
+        <span
+            class="absolute right-full mr-3 top-1/2 -translate-y-1/2 px-2 py-1 bg-black/80 text-xs text-white rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+            Music
+        </span>
+    </button>
+
+    <script>
+        // --- 7. Background Music Logic ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const audio = document.getElementById('bg-music');
+            const btn = document.getElementById('music-toggle');
+            const icon = btn.querySelector('div');
+            let isPlaying = false;
+
+            const playIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+            const pauseIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+
+            function toggleMusic() {
+                if (isPlaying) {
+                    audio.pause();
+                    icon.innerHTML = playIcon;
+                    btn.classList.add('opacity-70');
+                    btn.classList.remove('text-accent', 'border-accent');
+                    btn.classList.add('text-gray-400', 'border-gray-600');
+                } else {
+                    audio.play().then(() => {
+                        icon.innerHTML = pauseIcon;
+                        btn.classList.remove('opacity-70');
+                        btn.classList.remove('text-gray-400', 'border-gray-600');
+                        btn.classList.add('text-accent', 'border-accent');
+                    }).catch(err => console.log("Playback failed:", err));
+                }
+                isPlaying = !isPlaying;
+            }
+
+            btn.addEventListener('click', toggleMusic);
+
+            // Attempt Autoplay
+            const attemptPlay = () => {
+                audio.play().then(() => {
+                    isPlaying = true;
+                    icon.innerHTML = pauseIcon;
+                    btn.classList.remove('opacity-70');
+                    btn.classList.remove('text-gray-400', 'border-gray-600');
+                    btn.classList.add('text-accent', 'border-accent');
+                }).catch(error => {
+                    console.log("Autoplay blocked. Waiting for ANY interaction.");
+
+                    const unlockAudio = () => {
+                        if (!isPlaying) {
+                            audio.play().then(() => {
+                                isPlaying = true;
+                                icon.innerHTML = pauseIcon;
+                                btn.classList.remove('opacity-70');
+                                btn.classList.remove('text-gray-400', 'border-gray-600');
+                                btn.classList.add('text-accent', 'border-accent');
+
+                                // Remove all listeners once successful
+                                ['click', 'scroll', 'keydown', 'touchstart'].forEach(evt =>
+                                    window.removeEventListener(evt, unlockAudio)
+                                );
+                            }).catch(e => console.log("Still blocked:", e));
+                        }
+                    };
+
+                    // Listen to EVERYTHING to try and start music ASAP
+                    ['click', 'scroll', 'keydown', 'touchstart'].forEach(evt =>
+                        window.addEventListener(evt, unlockAudio, { once: true })
+                    );
+                });
+            };
+
+            attemptPlay();
+            initGuestbook();
+        });
+
+        // --- 8. Guestbook Logic ---
+        function initGuestbook() {
+            fetchMessages();
+        }
+
+        function fetchMessages() {
+            fetch('/api/messages')
+                .then(response => response.json())
+                .then(data => {
+                    renderMessages(data);
+                })
+                .catch(err => console.error("API Error:", err));
+        }
+
+        function renderMessages(messages) {
+            const list = document.getElementById('gb-list');
+            list.innerHTML = '';
+
+            messages.forEach((item, index) => {
+                const el = createMessageElement(item);
+                list.appendChild(el);
+            });
+        }
+
+        function createMessageElement(item) {
+            const div = document.createElement('div');
+            div.className = 'glass-panel p-4 rounded-lg border-l-4 border-accent relative group hover:bg-[#161b22] transition-colors';
+            div.innerHTML = `
+                <div class="flex justify-between items-start mb-2">
+                    <span class="text-accent font-bold font-mono text-sm">${item.name}</span>
+                    <span class="text-gray-600 text-xs font-mono">${item.time}</span>
+                </div>
+                <p class="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap font-sans">${item.msg}</p>
+                <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-20 text-white text-4xl font-mono select-none pointer-events-none">"</div>
+            `;
+            return div;
+        }
+
+        function submitGuestbook() {
+            const nameInput = document.getElementById('gb-name');
+            const msgInput = document.getElementById('gb-message');
+            const status = document.getElementById('gb-status');
+
+            const name = nameInput.value.trim();
+            const msg = msgInput.value.trim();
+
+            if (!name || !msg) {
+                status.innerText = "Lỗi: Vui lòng nhập đủ thông tin.";
+                status.className = "text-center text-xs font-mono h-4 text-keyword";
+                anime({ targets: status, opacity: [0, 1], direction: 'alternate', duration: 1000 });
+                return;
+            }
+
+            const newMessage = {
+                name: name,
+                msg: msg,
+                time: new Date().toLocaleDateString('vi-VN')
+            };
+
+            // Call API
+            fetch('/api/messages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newMessage)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) throw new Error(data.error);
+
+                    // UI Update (Animated)
+                    const list = document.getElementById('gb-list');
+                    const newEl = createMessageElement(newMessage);
+
+                    newEl.style.opacity = 0;
+                    newEl.style.transform = 'translateY(-20px)';
+
+                    list.prepend(newEl);
+
+                    anime({
+                        targets: newEl,
+                        opacity: [0, 1],
+                        translateY: [-20, 0],
+                        duration: 600,
+                        easing: 'easeOutExpo'
+                    });
+
+                    // Reset Form
+                    nameInput.value = '';
+                    msgInput.value = '';
+                    status.innerText = ">> Dữ liệu đã được lưu thành công.";
+                    status.className = "text-center text-xs font-mono h-4 text-success";
+                })
+                .catch(err => {
+                    status.innerText = "Lỗi hệ thống: " + err.message;
+                    status.className = "text-center text-xs font-mono h-4 text-keyword";
+                    console.error(err);
+                });
+        }
+    </script>
+</body>
+
+</html>

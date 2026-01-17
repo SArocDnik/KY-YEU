@@ -1,0 +1,12 @@
+[
+    {
+        "name": "Admin_System",
+        "msg": "Chào mừng các bạn đến với trang lưu bút số!",
+        "time": "Initial"
+    },
+    {
+        "name": "12_Tin_Bot",
+        "msg": "Hệ thống đã sẵn sàng ghi nhận cảm xúc.",
+        "time": "System Ready"
+    }
+]
