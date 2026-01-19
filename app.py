@@ -1,14 +1,79 @@
 from flask import Flask, jsonify, request, send_from_directory
 import json
 import os
-import json
-import os
 from datetime import datetime
 import threading
 import urllib.request
+from pymongo import MongoClient
 
 app = Flask(__name__)
 DB_FILE = 'guestbook.json'
+MONGO_URI = os.environ.get('MONGO_URI') # Get connection string from Environment
+
+# --- DATABASE ADAPTER ---
+class DataStore:
+    def __init__(self):
+        self.use_mongo = False
+        self.collection = None
+        
+        if MONGO_URI:
+            try:
+                client = MongoClient(MONGO_URI)
+                db = client.get_default_database() # Connects to database in URI
+                self.collection = db['guestbook']
+                self.use_mongo = True
+                print(f">> Connected to MongoDB Atlas")
+            except Exception as e:
+                print(f"!! MongoDB Connection Failed: {e}. Falling back to JSON.")
+        
+        if not self.use_mongo:
+             print(f">> Using Local JSON Storage: {DB_FILE}")
+
+    def get_all(self):
+        if self.use_mongo:
+            # Sort by _id desc (newest first) and limit 100
+            cursor = self.collection.find({}, {'_id': 0}).sort('_id', -1).limit(100)
+            return list(cursor)
+        else:
+            if not os.path.exists(DB_FILE):
+                return []
+            try:
+                with open(DB_FILE, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except:
+                return []
+
+    def insert(self, msg_obj):
+        if self.use_mongo:
+            self.collection.insert_one(msg_obj.copy())
+            # Cleanup old messages (>100)
+            count = self.collection.count_documents({})
+            if count > 100:
+                # Find the 100th latest doc
+                latest_100 = self.collection.find().sort('_id', -1).limit(100)
+                last_doc = list(latest_100)[-1]
+                # Delete anything older than that
+                self.collection.delete_many({'_id': {'$lt': last_doc['_id']}})
+        else:
+            data = self.get_all()
+            data.insert(0, msg_obj)
+            data = data[:100]
+            with open(DB_FILE, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=4)
+            return data
+
+    def seed(self, messages):
+        if self.use_mongo:
+             self.collection.insert_many(messages)
+        else:
+            current_data = self.get_all()
+            new_data = messages + current_data
+            new_data = new_data[:100]
+            with open(DB_FILE, 'w', encoding='utf-8') as f:
+                json.dump(new_data, f, ensure_ascii=False, indent=4)
+
+db = DataStore()
+
 DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1461950574827278408/I2_yuUEogKPtxHnNAKF46tqPQF_PtT2salGtcBqA6QKoQL7TPGaLK7vdBMVD5FD1tPoX"
 
 def send_discord_notification(name, msg, is_public=True):
@@ -60,28 +125,15 @@ def seed_data():
     try:
         current_date = datetime.now().strftime("%d/%m/%Y")
         
-        # Read existing
-        data = []
-        if os.path.exists(DB_FILE):
-            with open(DB_FILE, 'r', encoding='utf-8') as f:
-                try:
-                    data = json.load(f)
-                except json.JSONDecodeError:
-                    data = []
-
-        # Append new messages
+        # Prepare new messages
         new_msgs = []
         for msg in GEN_Z_MESSAGES:
             m = msg.copy()
             m['time'] = current_date
             new_msgs.append(m)
         
-        # Add to beginning
-        data = new_msgs + data
-        data = data[:100]
-
-        with open(DB_FILE, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=4)
+        # Use DataStore
+        db.seed(new_msgs)
             
         return jsonify({"status": "seeded", "count": len(new_msgs)})
     except Exception as e:
@@ -97,11 +149,8 @@ def serve_static(path):
 
 @app.route('/api/messages', methods=['GET'])
 def get_messages():
-    if not os.path.exists(DB_FILE):
-        return jsonify([])
     try:
-        with open(DB_FILE, 'r', encoding='utf-8') as f:
-            data = json.load(f)
+        data = db.get_all()
         # Filter public messages (default to True if key missing)
         public_messages = [m for m in data if m.get('is_public', True) is not False]
         return jsonify(public_messages)
@@ -137,22 +186,13 @@ def add_message():
         if not new_msg.get('time'):
             new_msg['time'] = datetime.now().strftime("%d/%m/%Y")
 
-        messages = []
-        if os.path.exists(DB_FILE):
-            with open(DB_FILE, 'r', encoding='utf-8') as f:
-                try:
-                    messages = json.load(f)
-                except json.JSONDecodeError:
-                    messages = []
+        # Insert via DataStore
+        db.insert(new_msg)
         
-        # Prepend new message
-        messages.insert(0, new_msg)
-        
-        # Limit to 100 messages
-        messages = messages[:100]
-
-        with open(DB_FILE, 'w', encoding='utf-8') as f:
-            json.dump(messages, f, ensure_ascii=False, indent=4)
+        # Return updated list
+        all_messages = db.get_all()
+        # Filter for display
+        public_messages = [m for m in all_messages if m.get('is_public', True) is not False]
             
         # Send Discord Notification (Async)
         try:
@@ -160,7 +200,7 @@ def add_message():
         except Exception as e:
             print(f"Thread error: {e}")
 
-        return jsonify({"status": "success", "data": messages})
+        return jsonify({"status": "success", "data": public_messages})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
