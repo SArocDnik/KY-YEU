@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 import threading
 import urllib.request
+import urllib.parse
 from pymongo import MongoClient
 
 app = Flask(__name__)
@@ -19,7 +20,14 @@ class DataStore:
         if MONGO_URI:
             try:
                 client = MongoClient(MONGO_URI)
-                db = client.get_default_database() # Connects to database in URI
+                # Force a specific database name if URI doesn't specify one
+                # This fixes "No default database name defined" error
+                db_name = urllib.parse.urlparse(MONGO_URI).path.strip('/')
+                if not db_name:
+                    db = client['yearbook_2026'] # Default DB name
+                else:
+                    db = client.get_default_database()
+                
                 self.collection = db['guestbook']
                 self.use_mongo = True
                 print(f">> Connected to MongoDB Atlas")
