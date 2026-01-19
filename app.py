@@ -11,16 +11,20 @@ app = Flask(__name__)
 DB_FILE = 'guestbook.json'
 DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1461950574827278408/I2_yuUEogKPtxHnNAKF46tqPQF_PtT2salGtcBqA6QKoQL7TPGaLK7vdBMVD5FD1tPoX"
 
-def send_discord_notification(name, msg):
+def send_discord_notification(name, msg, is_public=True):
     try:
+        title = "🎉 New Yearbook Message!" if is_public else "🔒 New PRIVATE Yearbook Message!"
+        color = 5797887 if is_public else 16711680 # Blue for Public, Red for Private
+        
         payload = {
             "embeds": [
                 {
-                    "title": "🎉 New Yearbook Message!",
-                    "color": 5797887, # #58a6ff (Accent Blue in decimal)
+                    "title": title,
+                    "color": color, 
                     "fields": [
                         {"name": "From", "value": f"**{name}**", "inline": True},
-                        {"name": "Message", "value": msg, "inline": False}
+                        {"name": "Message", "value": msg, "inline": False},
+                        {"name": "Visibility", "value": "Public" if is_public else "Private", "inline": True}
                     ],
                     "footer": {"text": "Yearbook 2026 Notification System"}
                 }
@@ -98,7 +102,9 @@ def get_messages():
     try:
         with open(DB_FILE, 'r', encoding='utf-8') as f:
             data = json.load(f)
-        return jsonify(data)
+        # Filter public messages (default to True if key missing)
+        public_messages = [m for m in data if m.get('is_public', True) is not False]
+        return jsonify(public_messages)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -150,7 +156,7 @@ def add_message():
             
         # Send Discord Notification (Async)
         try:
-            threading.Thread(target=send_discord_notification, args=(new_msg.get('name'), new_msg.get('msg'))).start()
+            threading.Thread(target=send_discord_notification, args=(new_msg.get('name'), new_msg.get('msg'), new_msg.get('is_public', True))).start()
         except Exception as e:
             print(f"Thread error: {e}")
 
