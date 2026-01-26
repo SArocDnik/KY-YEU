@@ -424,10 +424,101 @@
             opacity: 1;
             transform: translateY(-50%) translateX(0);
         }
+        /* --- Overlay Welcome Screen --- */
+        #overlay-screen {
+            background: linear-gradient(135deg, #010409 0%, #0d1117 100%);
+        }
+        
+        #overlay-screen::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(rgba(88, 166, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(88, 166, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridMove 20s linear infinite;
+        }
+        
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+        
+        .glitch-text {
+            animation: glitch 3s infinite;
+        }
+        
+        @keyframes glitch {
+            0%, 90%, 100% { transform: translate(0); }
+            91% { transform: translate(-2px, 1px); }
+            92% { transform: translate(2px, -1px); }
+            93% { transform: translate(-1px, 2px); }
+            94% { transform: translate(1px, -2px); }
+        }
+        
+        .scanline {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 0, 0, 0.1) 2px,
+                rgba(0, 0, 0, 0.1) 4px
+            );
+            pointer-events: none;
+            z-index: 10;
+        }
     </style>
 </head>
 
 <body class="font-sans antialiased selection:bg-accent selection:text-white">
+
+    <!-- WELCOME OVERLAY SCREEN -->
+    <div id="overlay-screen" class="fixed inset-0 z-[999] flex flex-col items-center justify-center transition-opacity duration-1000">
+        <div class="scanline"></div>
+        <div class="text-center space-y-6 p-4 relative z-20">
+            <!-- Glitch Title -->
+            <h1 class="text-4xl md:text-6xl font-bold font-mono text-white tracking-widest relative glitch-text">
+                <span class="text-accent">SYSTEM</span>_LOCKED
+            </h1>
+            
+            <!-- Typing Security Message -->
+            <p class="text-gray-400 font-mono text-sm md:text-base animate-pulse">
+                >> Security Protocol Enabled. Authorization Required.
+            </p>
+
+            <!-- CTA Button -->
+            <button onclick="enterSite()" 
+                class="group relative px-8 py-4 bg-transparent overflow-hidden rounded-none border-2 border-accent text-accent font-bold font-mono tracking-wider hover:text-white hover:bg-accent hover:shadow-[0_0_30px_rgba(88,166,255,0.6)] transition-all duration-300 transform hover:scale-105">
+                <span class="absolute inset-0 w-full h-full bg-accent/10 group-hover:bg-accent/0 transition-all"></span>
+                <span class="relative flex items-center gap-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path>
+                    </svg>
+                    [ ACCESS_MAINFRAME ]
+                    <span class="absolute right-2 w-2 h-2 bg-accent rounded-full animate-ping opacity-75"></span>
+                </span>
+            </button>
+            
+            <!-- Fake Terminal Info -->
+            <div class="mt-8 text-[10px] text-gray-600 font-mono space-y-1">
+                <div class="flex items-center justify-center gap-2">
+                    <span class="w-2 h-2 bg-success rounded-full animate-pulse"></span>
+                    SECURE CONNECTION ESTABLISHED
+                </div>
+                <div>IP: 127.0.0.1 :: PORT 2026</div>
+                <div class="text-gray-700">PROTOCOL: YEARBOOK_v12.0</div>
+            </div>
+        </div>
+    </div>
 
     <!-- NAVIGATION HEADER -->
     <nav
@@ -1317,13 +1408,40 @@
     </div>
 
     <script>
+        // --- Global state for music ---
+        let isPlaying = false;
+        
+        const playIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+        const pauseIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+
+        // --- Enter Site Function (Called from Overlay Button) ---
+        function enterSite() {
+            const overlay = document.getElementById('overlay-screen');
+            const audio = document.getElementById('bg-music');
+            const btn = document.getElementById('music-toggle');
+            
+            // 1. Phát nhạc ngay lập tức (Vì người dùng vừa click)
+            audio.play().then(() => {
+                isPlaying = true;
+                // Cập nhật icon Pause cho nút điều khiển nhạc
+                btn.innerHTML = pauseIcon;
+            }).catch(err => console.log("Audio Error:", err));
+
+            // 2. Hiệu ứng biến mất của màn hình chờ
+            overlay.style.opacity = '0';
+            overlay.style.pointerEvents = 'none';
+
+            // 3. Xóa hẳn khỏi DOM sau khi animation xong (1s)
+            setTimeout(() => {
+                overlay.remove();
+            }, 1000);
+        }
+
         // --- 7. Background Music Logic ---
         document.addEventListener('DOMContentLoaded', () => {
             const audio = document.getElementById('bg-music');
             const btn = document.getElementById('music-toggle');
             const slider = document.getElementById('volume-slider');
-            // const icon removed, we update btn.innerHTML directly
-            let isPlaying = false;
 
             // Initialize Volume
             audio.volume = 0.5;
@@ -1333,15 +1451,10 @@
                 audio.volume = e.target.value;
             });
 
-            const playIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
-            const pauseIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
-
             function toggleMusic() {
                 if (isPlaying) {
                     audio.pause();
                     btn.innerHTML = playIcon;
-                    // Keep active style but maybe dim slightly? Or just toggle icon
-                    // Since it's a fixed design, we just toggle icon mostly.
                 } else {
                     audio.play().then(() => {
                         btn.innerHTML = pauseIcon;
@@ -1351,37 +1464,8 @@
             }
 
             btn.addEventListener('click', toggleMusic);
-
-            // Attempt Autoplay
-            const attemptPlay = () => {
-                audio.play().then(() => {
-                    isPlaying = true;
-                    btn.innerHTML = pauseIcon;
-                }).catch(error => {
-                    console.log("Autoplay blocked. Waiting for ANY interaction.");
-
-                    const unlockAudio = () => {
-                        if (!isPlaying) {
-                            audio.play().then(() => {
-                                isPlaying = true;
-                                btn.innerHTML = pauseIcon;
-
-                                // Remove all listeners once successful
-                                ['click', 'scroll', 'keydown', 'touchstart'].forEach(evt =>
-                                    window.removeEventListener(evt, unlockAudio)
-                                );
-                            }).catch(e => console.log("Still blocked:", e));
-                        }
-                    };
-
-                    // Listen to EVERYTHING to try and start music ASAP
-                    ['click', 'scroll', 'keydown', 'touchstart'].forEach(evt =>
-                        window.addEventListener(evt, unlockAudio, { once: true })
-                    );
-                });
-            };
-
-            attemptPlay();
+            
+            // Initialize Guestbook
             initGuestbook();
         });
 
@@ -1499,11 +1583,4 @@
         }
     </script>
 </body>
-
-
 </html>
-
-
-
-
-
