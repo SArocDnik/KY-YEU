@@ -82,6 +82,179 @@ class DataStore:
 
 db = DataStore()
 
+# --- LINK STORE (Personalized Links) ---
+class LinkStore:
+    """Quản lý các link cá nhân hóa cho thiệp mời"""
+    def __init__(self):
+        self.use_mongo = False
+        self.collection = None
+        self.local_file = 'personalized_links.json'
+        
+        if MONGO_URI:
+            try:
+                client = MongoClient(MONGO_URI)
+                db_name = urllib.parse.urlparse(MONGO_URI).path.strip('/')
+                if not db_name:
+                    database = client['yearbook_2026']
+                else:
+                    database = client.get_default_database()
+                
+                self.collection = database['personalized_links']
+                # Tạo index unique cho slug
+                self.collection.create_index('slug', unique=True)
+                self.use_mongo = True
+            except Exception as e:
+                print(f"!! LinkStore MongoDB Failed: {e}")
+        
+    def _generate_slug(self, name):
+        """Tạo slug từ tên người nhận"""
+        import re
+        import unicodedata
+        # Chuẩn hóa unicode và loại bỏ dấu
+        slug = unicodedata.normalize('NFD', name.lower())
+        slug = slug.encode('ascii', 'ignore').decode('utf-8')
+        slug = re.sub(r'[^a-z0-9\s-]', '', slug)
+        slug = re.sub(r'[\s_]+', '-', slug).strip('-')
+        return slug or 'link'
+    
+    def create(self, recipient_name, message, custom_slug=None, page_title=None):
+        """Tạo link mới"""
+        slug = custom_slug.strip() if custom_slug else self._generate_slug(recipient_name)
+        
+        # Kiểm tra slug đã tồn tại
+        if self.get_by_slug(slug):
+            # Thêm số ngẫu nhiên nếu trùng
+            import random
+            slug = f"{slug}-{random.randint(100, 999)}"
+        
+        link_data = {
+            'slug': slug,
+            'recipient_name': recipient_name,
+            'message': message,
+            'page_title': page_title or f"Thiệp mời {recipient_name}",
+            'created_at': datetime.now().isoformat()
+        }
+        
+        if self.use_mongo:
+            self.collection.insert_one(link_data.copy())
+        else:
+            data = self.get_all()
+            data.insert(0, link_data)
+            with open(self.local_file, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+        
+        return link_data
+    
+    def get_all(self):
+        """Lấy tất cả links"""
+        if self.use_mongo:
+            cursor = self.collection.find({}, {'_id': 0}).sort('_id', -1)
+            return list(cursor)
+        else:
+            if not os.path.exists(self.local_file):
+                return []
+            try:
+                with open(self.local_file, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except:
+                return []
+    
+    def get_by_slug(self, slug):
+        """Lấy link theo slug"""
+        if self.use_mongo:
+            return self.collection.find_one({'slug': slug}, {'_id': 0})
+        else:
+            for link in self.get_all():
+                if link.get('slug') == slug:
+                    return link
+            return None
+    
+    def delete(self, slug):
+        """Xóa link theo slug"""
+        if self.use_mongo:
+            result = self.collection.delete_one({'slug': slug})
+            return result.deleted_count > 0
+        else:
+            data = self.get_all()
+            new_data = [l for l in data if l.get('slug') != slug]
+            if len(new_data) < len(data):
+                with open(self.local_file, 'w', encoding='utf-8') as f:
+                    json.dump(new_data, f, ensure_ascii=False, indent=2)
+                return True
+            return False
+
+link_store = LinkStore()
+
+# --- TEMPLATE STORE (Message Templates) ---
+class TemplateStore:
+    """Quản lý các template lời chúc tùy chỉnh"""
+    def __init__(self):
+        self.use_mongo = False
+        self.collection = None
+        self.local_file = 'message_templates.json'
+        
+        if MONGO_URI:
+            try:
+                client = MongoClient(MONGO_URI)
+                db_name = urllib.parse.urlparse(MONGO_URI).path.strip('/')
+                if not db_name:
+                    database = client['yearbook_2026']
+                else:
+                    database = client.get_default_database()
+                
+                self.collection = database['message_templates']
+                self.use_mongo = True
+            except Exception as e:
+                print(f"!! TemplateStore MongoDB Failed: {e}")
+    
+    def create(self, name, content):
+        """Tạo template mới"""
+        template_data = {
+            'name': name,
+            'content': content,
+            'created_at': datetime.now().isoformat()
+        }
+        
+        if self.use_mongo:
+            self.collection.insert_one(template_data.copy())
+        else:
+            data = self.get_all()
+            data.insert(0, template_data)
+            with open(self.local_file, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+        
+        return template_data
+    
+    def get_all(self):
+        """Lấy tất cả templates"""
+        if self.use_mongo:
+            cursor = self.collection.find({}, {'_id': 0}).sort('_id', -1)
+            return list(cursor)
+        else:
+            if not os.path.exists(self.local_file):
+                return []
+            try:
+                with open(self.local_file, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except:
+                return []
+    
+    def delete(self, name):
+        """Xóa template theo tên"""
+        if self.use_mongo:
+            result = self.collection.delete_one({'name': name})
+            return result.deleted_count > 0
+        else:
+            data = self.get_all()
+            new_data = [t for t in data if t.get('name') != name]
+            if len(new_data) < len(data):
+                with open(self.local_file, 'w', encoding='utf-8') as f:
+                    json.dump(new_data, f, ensure_ascii=False, indent=2)
+                return True
+            return False
+
+template_store = TemplateStore()
+
 DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1461950574827278408/I2_yuUEogKPtxHnNAKF46tqPQF_PtT2salGtcBqA6QKoQL7TPGaLK7vdBMVD5FD1tPoX"
 
 def send_discord_notification(name, msg, is_public=True):
@@ -146,6 +319,127 @@ def seed_data():
         return jsonify({"status": "seeded", "count": len(new_msgs)})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+# --- PERSONALIZED LINKS API ---
+@app.route('/api/links', methods=['GET'])
+def get_links():
+    """Lấy danh sách tất cả links"""
+    try:
+        links = link_store.get_all()
+        return jsonify(links)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/links', methods=['POST'])
+def create_link():
+    """Tạo link cá nhân hóa mới"""
+    try:
+        data = request.json
+        recipient_name = data.get('recipient_name', '').strip()
+        message = data.get('message', '').strip()
+        custom_slug = data.get('slug', '').strip()
+        page_title = data.get('page_title', '').strip()
+        
+        if not recipient_name:
+            return jsonify({"error": "Tên người nhận không được để trống"}), 400
+        if not message:
+            return jsonify({"error": "Lời chúc không được để trống"}), 400
+        
+        link = link_store.create(recipient_name, message, custom_slug or None, page_title or None)
+        return jsonify({"status": "success", "link": link})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/links/<slug>', methods=['DELETE'])
+def delete_link(slug):
+    """Xóa link"""
+    try:
+        success = link_store.delete(slug)
+        if success:
+            return jsonify({"status": "deleted"})
+        return jsonify({"error": "Link không tồn tại"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# --- TEMPLATES API ---
+@app.route('/api/templates', methods=['GET'])
+def get_templates():
+    """Lấy danh sách templates"""
+    try:
+        templates = template_store.get_all()
+        return jsonify(templates)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/templates', methods=['POST'])
+def create_template():
+    """Tạo template mới"""
+    try:
+        data = request.json
+        name = data.get('name', '').strip()
+        content = data.get('content', '').strip()
+        
+        if not name:
+            return jsonify({"error": "Tên template không được để trống"}), 400
+        if not content:
+            return jsonify({"error": "Nội dung template không được để trống"}), 400
+        
+        template = template_store.create(name, content)
+        return jsonify({"status": "success", "template": template})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/templates/<name>', methods=['DELETE'])
+def delete_template(name):
+    """Xóa template"""
+    try:
+        success = template_store.delete(name)
+        if success:
+            return jsonify({"status": "deleted"})
+        return jsonify({"error": "Template không tồn tại"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# --- ADMIN PANEL ---
+@app.route('/admin')
+def admin_panel():
+    """Trang quản lý tạo link"""
+    return send_from_directory('.', 'admin.html')
+
+# --- PERSONALIZED PAGE ---
+@app.route('/p/<slug>')
+def personalized_page(slug):
+    """Hiển thị trang thiệp mời cá nhân hóa"""
+    link = link_store.get_by_slug(slug)
+    if not link:
+        return "<h1>404 - Link không tồn tại</h1>", 404
+    
+    # Đọc template và thay thế placeholder
+    try:
+        with open('index.html', 'r', encoding='utf-8') as f:
+            html = f.read()
+        
+        # Thay thế tiêu đề trang
+        html = html.replace(
+            '<title>Thiệp Mời Kỷ Yếu - 12 Chuyên Tin</title>',
+            f'<title>{link["page_title"]}</title>'
+        )
+        
+        # Inject personalized data vào JavaScript
+        personalized_script = f'''
+        <script>
+            window.PERSONALIZED_DATA = {{
+                recipientName: "{link['recipient_name']}",
+                message: "{link['message'].replace('"', '\\"')}",
+                pageTitle: "{link['page_title']}"
+            }};
+        </script>
+        </head>'''
+        html = html.replace('</head>', personalized_script)
+        
+        return html
+    except Exception as e:
+        return f"<h1>Error: {e}</h1>", 500
 
 @app.route('/')
 def index():
@@ -214,4 +508,4 @@ def add_message():
 
 if __name__ == '__main__':
     print(">> YEARBOOK SYSTEM ONLINE: http://localhost:5000")
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=1000)
