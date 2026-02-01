@@ -5,10 +5,25 @@ from datetime import datetime
 import threading
 import urllib.request
 import urllib.parse
+import uuid
+from werkzeug.utils import secure_filename
 from pymongo import MongoClient
 
 app = Flask(__name__)
 DB_FILE = 'guestbook.json'
+
+# --- UPLOAD CONFIG ---
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
+
+# Tạo thư mục uploads nếu chưa tồn tại
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 MONGO_URI = os.environ.get('MONGO_URI') # Get connection string from Environment
 
 # --- DATABASE ADAPTER ---
@@ -117,8 +132,9 @@ class LinkStore:
         slug = re.sub(r'[\s_]+', '-', slug).strip('-')
         return slug or 'link'
     
-    def create(self, recipient_name, message, custom_slug=None, page_title=None):
-        """Tạo link mới"""
+    def create(self, recipient_name, message, custom_slug=None, page_title=None, 
+                 sender_name=None, subtitle=None, og_image=None):
+        """Tạo link mới với Open Graph support"""
         slug = custom_slug.strip() if custom_slug else self._generate_slug(recipient_name)
         
         # Kiểm tra slug đã tồn tại
@@ -127,11 +143,17 @@ class LinkStore:
             import random
             slug = f"{slug}-{random.randint(100, 999)}"
         
+        # Tạo default subtitle nếu không có
+        default_subtitle = "Thanh xuân như một cơn mưa rào. Hãy cùng mình lưu giữ lại những khoảnh khắc rực rỡ nhất của tuổi học trò trước khi chúng ta mỗi người một ngả..."
+        
         link_data = {
             'slug': slug,
             'recipient_name': recipient_name,
+            'sender_name': sender_name or 'Bạn bè',
             'message': message,
             'page_title': page_title or f"Thiệp mời {recipient_name}",
+            'subtitle': subtitle or default_subtitle,
+            'og_image': og_image,  # Path to uploaded image
             'created_at': datetime.now().isoformat()
         }
         
@@ -332,23 +354,65 @@ def get_links():
 
 @app.route('/api/links', methods=['POST'])
 def create_link():
-    """Tạo link cá nhân hóa mới"""
+    """Tạo link cá nhân hóa mới với Open Graph support"""
     try:
         data = request.json
         recipient_name = data.get('recipient_name', '').strip()
         message = data.get('message', '').strip()
         custom_slug = data.get('slug', '').strip()
         page_title = data.get('page_title', '').strip()
+        sender_name = data.get('sender_name', '').strip()
+        subtitle = data.get('subtitle', '').strip()
+        og_image = data.get('og_image', '').strip()
         
         if not recipient_name:
             return jsonify({"error": "Tên người nhận không được để trống"}), 400
         if not message:
             return jsonify({"error": "Lời chúc không được để trống"}), 400
         
-        link = link_store.create(recipient_name, message, custom_slug or None, page_title or None)
+        link = link_store.create(
+            recipient_name, 
+            message, 
+            custom_slug or None, 
+            page_title or None,
+            sender_name or None,
+            subtitle or None,
+            og_image or None
+        )
         return jsonify({"status": "success", "link": link})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/upload', methods=['POST'])
+def upload_image():
+    """Upload ảnh nền cho Open Graph"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({"error": "Không có file được chọn"}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"error": "Không có file được chọn"}), 400
+        
+        if file and allowed_file(file.filename):
+            # Tạo tên file unique
+            ext = file.filename.rsplit('.', 1)[1].lower()
+            filename = f"{uuid.uuid4().hex}.{ext}"
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(filepath)
+            
+            # Trả về URL của ảnh
+            image_url = f"/uploads/{filename}"
+            return jsonify({"status": "success", "url": image_url, "filename": filename})
+        else:
+            return jsonify({"error": "Định dạng file không được hỗ trợ. Chỉ chấp nhận: png, jpg, jpeg, gif, webp"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/uploads/<filename>')
+def serve_upload(filename):
+    """Phục vụ file ảnh đã upload"""
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 @app.route('/api/links/<slug>', methods=['DELETE'])
 def delete_link(slug):
@@ -409,7 +473,7 @@ def admin_panel():
 # --- PERSONALIZED PAGE ---
 @app.route('/p/<slug>')
 def personalized_page(slug):
-    """Hiển thị trang thiệp mời cá nhân hóa"""
+    """Hiển thị trang thiệp mời cá nhân hóa với Open Graph"""
     link = link_store.get_by_slug(slug)
     if not link:
         return "<h1>404 - Link không tồn tại</h1>", 404
@@ -419,23 +483,60 @@ def personalized_page(slug):
         with open('index.html', 'r', encoding='utf-8') as f:
             html = f.read()
         
+        # Tạo URL đầy đủ cho ảnh
+        base_url = request.host_url.rstrip('/')
+        og_image_url = link.get('og_image', '')
+        if og_image_url and not og_image_url.startswith('http'):
+            og_image_url = f"{base_url}{og_image_url}"
+        else:
+            # Default image nếu không có
+            og_image_url = f"{base_url}/static/default-og.jpg"
+        
+        # Tạo OG title theo format mong muốn
+        sender = link.get('sender_name', 'Bạn bè')
+        recipient = link.get('recipient_name', '')
+        og_title = f"Thiệp mời: Kỷ Yếu - {sender} gửi {recipient} | Thiệp Online"
+        
+        # Subtitle cho description
+        og_description = link.get('subtitle', 'Thanh xuân như một cơn mưa rào. Hãy cùng mình lưu giữ lại những khoảnh khắc rực rỡ nhất của tuổi học trò trước khi chúng ta mỗi người một ngả...')
+        
+        # Full URL của trang
+        og_url = f"{base_url}/p/{slug}"
+        
         # Thay thế tiêu đề trang
         html = html.replace(
             '<title>Thiệp Mời Kỷ Yếu - 12 Chuyên Tin</title>',
             f'<title>{link["page_title"]}</title>'
         )
         
-        # Inject personalized data vào JavaScript
-        personalized_script = f'''
-        <script>
-            window.PERSONALIZED_DATA = {{
-                recipientName: "{link['recipient_name']}",
-                message: "{link['message'].replace('"', '\\"')}",
-                pageTitle: "{link['page_title']}"
-            }};
-        </script>
-        </head>'''
-        html = html.replace('</head>', personalized_script)
+        # Inject Open Graph meta tags và personalized data vào head
+        og_tags = f'''
+    <!-- Open Graph / Facebook / Messenger -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{og_url}">
+    <meta property="og:title" content="{og_title}">
+    <meta property="og:description" content="{og_description}">
+    <meta property="og:image" content="{og_image_url}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{og_title}">
+    <meta name="twitter:description" content="{og_description}">
+    <meta name="twitter:image" content="{og_image_url}">
+    
+    <script>
+        window.PERSONALIZED_DATA = {{
+            recipientName: "{link['recipient_name']}",
+            senderName: "{link.get('sender_name', 'Bạn bè')}",
+            message: "{link['message'].replace('"', '\\"').replace(chr(10), '\\n').replace(chr(13), '')}",
+            pageTitle: "{link['page_title']}",
+            subtitle: "{link.get('subtitle', '').replace('"', '\\"')}"
+        }};
+    </script>
+    </head>'''
+        html = html.replace('</head>', og_tags)
         
         return html
     except Exception as e:
