@@ -6,24 +6,41 @@ import threading
 import urllib.request
 import urllib.parse
 import uuid
-from werkzeug.utils import secure_filename
+try:
+    from werkzeug.utils import secure_filename
+except ImportError:
+    # Fallback nếu werkzeug không có
+    def secure_filename(filename):
+        return filename.replace(' ', '_').replace('/', '_')
 from pymongo import MongoClient
 
 app = Flask(__name__)
 DB_FILE = 'guestbook.json'
 
+# --- VERCEL DETECTION ---
+IS_VERCEL = os.environ.get('VERCEL', False) or os.environ.get('VERCEL_ENV', False)
+
 # --- UPLOAD CONFIG ---
-UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+# Trên Vercel, dùng /tmp cho file tạm (giới hạn 512MB)
+if IS_VERCEL:
+    UPLOAD_FOLDER = '/tmp/uploads'
+else:
+    UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
 
-# Tạo thư mục uploads nếu chưa tồn tại
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
+# Tạo thư mục uploads nếu chưa tồn tại (với error handling cho Vercel)
+try:
+    if not os.path.exists(UPLOAD_FOLDER):
+        os.makedirs(UPLOAD_FOLDER)
+except Exception as e:
+    print(f"Warning: Cannot create upload folder: {e}")
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 MONGO_URI = os.environ.get('MONGO_URI') # Get connection string from Environment
 
 # --- DATABASE ADAPTER ---
@@ -398,12 +415,34 @@ def upload_image():
             # Tạo tên file unique
             ext = file.filename.rsplit('.', 1)[1].lower()
             filename = f"{uuid.uuid4().hex}.{ext}"
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(filepath)
             
-            # Trả về URL của ảnh
-            image_url = f"/uploads/{filename}"
-            return jsonify({"status": "success", "url": image_url, "filename": filename})
+            try:
+                # Tạo thư mục nếu chưa có
+                if not os.path.exists(app.config['UPLOAD_FOLDER']):
+                    os.makedirs(app.config['UPLOAD_FOLDER'])
+                    
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                file.save(filepath)
+                
+                # Trả về URL của ảnh
+                image_url = f"/uploads/{filename}"
+                
+                # Cảnh báo nếu đang trên Vercel
+                warning = None
+                if IS_VERCEL:
+                    warning = "Lưu ý: Ảnh upload trên Vercel chỉ là tạm thời. Khuyến nghị dùng link ảnh từ Imgur/Cloudinary."
+                
+                return jsonify({
+                    "status": "success", 
+                    "url": image_url, 
+                    "filename": filename,
+                    "warning": warning
+                })
+            except Exception as save_error:
+                return jsonify({
+                    "error": f"Không thể lưu file: {str(save_error)}. Hãy dùng URL ảnh trực tiếp (Imgur, Cloudinary...).",
+                    "use_external_url": True
+                }), 500
         else:
             return jsonify({"error": "Định dạng file không được hỗ trợ. Chỉ chấp nhận: png, jpg, jpeg, gif, webp"}), 400
     except Exception as e:
@@ -412,7 +451,10 @@ def upload_image():
 @app.route('/uploads/<filename>')
 def serve_upload(filename):
     """Phục vụ file ảnh đã upload"""
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    try:
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    except Exception as e:
+        return jsonify({"error": "File không tồn tại"}), 404
 
 @app.route('/api/links/<slug>', methods=['DELETE'])
 def delete_link(slug):

@@ -209,17 +209,41 @@
                             Ảnh nền (Thumbnail khi chia sẻ)
                         </span>
                     </label>
-                    <div class="flex gap-3 items-start">
+
+                    <!-- Tabs: Upload hoặc URL -->
+                    <div class="flex gap-2 mb-3">
+                        <button type="button" onclick="switchImageTab('upload')" id="tabUpload"
+                            class="px-3 py-1.5 text-sm rounded-lg bg-accent/20 text-accent font-medium">
+                            Upload ảnh
+                        </button>
+                        <button type="button" onclick="switchImageTab('url')" id="tabUrl"
+                            class="px-3 py-1.5 text-sm rounded-lg bg-gray-700/30 text-gray-400 hover:text-white transition">
+                            Dùng URL ảnh
+                        </button>
+                    </div>
+
+                    <!-- Upload Mode -->
+                    <div id="uploadMode" class="flex gap-3 items-start">
                         <div class="flex-1">
                             <input type="file" id="imageUpload" accept="image/*"
                                 class="w-full bg-bgDark border border-borderDark rounded-lg px-4 py-3 text-white focus:border-accent focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-accent/20 file:text-accent hover:file:bg-accent/30 file:cursor-pointer">
-                            <p class="text-xs text-gray-600 mt-1">Khuyến nghị kích thước: 1200x630px (tỉ lệ
-                                Facebook/Messenger)</p>
+                            <p class="text-xs text-gray-600 mt-1">Kích thước: 1200x630px. <span class="text-keyword">⚠
+                                    Trên Vercel chỉ lưu tạm thời!</span></p>
                         </div>
                         <div id="imagePreview" class="hidden">
                             <img id="previewImg" class="w-24 h-24 object-cover rounded-lg border border-borderDark">
                         </div>
                     </div>
+
+                    <!-- URL Mode (Hidden by default) -->
+                    <div id="urlMode" class="hidden">
+                        <input type="text" id="imageUrlInput"
+                            class="w-full bg-bgDark border border-borderDark rounded-lg px-4 py-3 text-white focus:border-accent focus:outline-none transition"
+                            placeholder="https://i.imgur.com/xxxxx.jpg hoặc link ảnh từ Cloudinary...">
+                        <p class="text-xs text-gray-600 mt-1">Dán link ảnh từ Imgur, Cloudinary, hoặc bất kỳ hosting ảnh
+                            nào. <span class="text-success">✓ Khuyến nghị cho Vercel</span></p>
+                    </div>
+
                     <input type="hidden" id="uploadedImageUrl">
                 </div>
 
@@ -351,12 +375,39 @@
         }
 
         // --- LINKS ---
+        let currentImageMode = 'upload'; // 'upload' or 'url'
+
+        function switchImageTab(mode) {
+            currentImageMode = mode;
+            const tabUpload = document.getElementById('tabUpload');
+            const tabUrl = document.getElementById('tabUrl');
+            const uploadMode = document.getElementById('uploadMode');
+            const urlMode = document.getElementById('urlMode');
+
+            if (mode === 'upload') {
+                tabUpload.className = 'px-3 py-1.5 text-sm rounded-lg bg-accent/20 text-accent font-medium';
+                tabUrl.className = 'px-3 py-1.5 text-sm rounded-lg bg-gray-700/30 text-gray-400 hover:text-white transition';
+                uploadMode.classList.remove('hidden');
+                urlMode.classList.add('hidden');
+            } else {
+                tabUrl.className = 'px-3 py-1.5 text-sm rounded-lg bg-accent/20 text-accent font-medium';
+                tabUpload.className = 'px-3 py-1.5 text-sm rounded-lg bg-gray-700/30 text-gray-400 hover:text-white transition';
+                urlMode.classList.remove('hidden');
+                uploadMode.classList.add('hidden');
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             loadLinks();
             loadTemplates();
 
             // Image preview handler
             document.getElementById('imageUpload').addEventListener('change', handleImagePreview);
+
+            // URL input handler
+            document.getElementById('imageUrlInput').addEventListener('input', (e) => {
+                document.getElementById('uploadedImageUrl').value = e.target.value.trim();
+            });
         });
 
         // Handle image preview and upload
@@ -390,12 +441,24 @@
 
                 if (res.ok) {
                     document.getElementById('uploadedImageUrl').value = result.url;
-                    showStatus('success', 'Ảnh đã upload thành công!');
+                    let msg = 'Ảnh đã upload thành công!';
+                    if (result.warning) {
+                        msg += ' ' + result.warning;
+                        showStatus('warning', msg);
+                    } else {
+                        showStatus('success', msg);
+                    }
                 } else {
-                    showStatus('error', result.error || 'Lỗi upload ảnh');
+                    // Nếu upload thất bại, gợi ý dùng URL
+                    if (result.use_external_url) {
+                        showStatus('error', result.error + ' Hãy chuyển sang tab "Dùng URL ảnh".');
+                        switchImageTab('url');
+                    } else {
+                        showStatus('error', result.error || 'Lỗi upload ảnh');
+                    }
                 }
             } catch (err) {
-                showStatus('error', 'Không thể upload ảnh');
+                showStatus('error', 'Không thể upload ảnh. Hãy thử dùng URL ảnh trực tiếp.');
             } finally {
                 uploadStatus.classList.add('hidden');
                 uploadStatus.classList.remove('flex');
@@ -405,6 +468,14 @@
         document.getElementById('createForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
+            // Lấy URL ảnh từ input phù hợp với mode hiện tại
+            let ogImage = '';
+            if (currentImageMode === 'url') {
+                ogImage = document.getElementById('imageUrlInput').value.trim();
+            } else {
+                ogImage = document.getElementById('uploadedImageUrl').value.trim();
+            }
+
             const data = {
                 sender_name: document.getElementById('senderName').value.trim(),
                 recipient_name: document.getElementById('recipientName').value.trim(),
@@ -412,7 +483,7 @@
                 slug: document.getElementById('customSlug').value.trim(),
                 page_title: document.getElementById('pageTitle').value.trim(),
                 subtitle: document.getElementById('subtitle').value.trim(),
-                og_image: document.getElementById('uploadedImageUrl').value.trim()
+                og_image: ogImage
             };
 
             try {
@@ -523,11 +594,17 @@
 
         function showStatus(type, message) {
             const el = document.getElementById('statusMessage');
-            el.className = `mt-4 p-4 rounded-lg font-medium ${type === 'success' ? 'bg-success/10 text-success' : 'bg-keyword/10 text-keyword'}`;
+            let colorClass = 'bg-keyword/10 text-keyword'; // default: error
+            if (type === 'success') {
+                colorClass = 'bg-success/10 text-success';
+            } else if (type === 'warning') {
+                colorClass = 'bg-yellow-500/10 text-yellow-400';
+            }
+            el.className = `mt-4 p-4 rounded-lg font-medium ${colorClass}`;
             el.textContent = message;
             el.classList.remove('hidden');
 
-            setTimeout(() => el.classList.add('hidden'), 5000);
+            setTimeout(() => el.classList.add('hidden'), type === 'warning' ? 8000 : 5000);
         }
 
         function escapeHtml(text) {
