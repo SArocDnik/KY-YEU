@@ -89,7 +89,7 @@
                             d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
                         </path>
                     </svg>
-                    Template Lời Chúc
+                    Template lời mời
                 </h2>
                 <button onclick="toggleTemplateForm()" id="toggleTemplateBtn"
                     class="text-sm text-accent hover:underline font-mono">+ Tạo template</button>
@@ -100,7 +100,7 @@
                 <div class="grid md:grid-cols-3 gap-3">
                     <input type="text" id="templateName" placeholder="Tên template (VD: Thân thiết)"
                         class="bg-cardDark border border-borderDark rounded-lg px-3 py-2 text-white text-sm focus:border-func focus:outline-none">
-                    <textarea id="templateContent" rows="2" placeholder="Nội dung lời chúc..."
+                    <textarea id="templateContent" rows="2" placeholder="Nội dung lời mời..."
                         class="md:col-span-2 bg-cardDark border border-borderDark rounded-lg px-3 py-2 text-white text-sm focus:border-func focus:outline-none resize-none"></textarea>
                 </div>
                 <div class="flex gap-2 mt-3">
@@ -155,10 +155,10 @@
 
                 <!-- Message -->
                 <div class="md:col-span-2">
-                    <label class="block text-sm font-mono text-gray-400 mb-2">Lời chúc *</label>
+                    <label class="block text-sm font-mono text-gray-400 mb-2">lời mời *</label>
                     <textarea id="message" required rows="3"
                         class="w-full bg-bgDark border border-borderDark rounded-lg px-4 py-3 text-white focus:border-accent focus:outline-none transition resize-none"
-                        placeholder="Chúc bạn luôn thành công và hạnh phúc..."></textarea>
+                        placeholder="Mời bạn đến ..."></textarea>
                 </div>
 
                 <!-- Page Title -->
@@ -419,5 +419,6 @@
         }
     </script>
 </body>
+
 
 </html>
