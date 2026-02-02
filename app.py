@@ -563,6 +563,10 @@ def personalized_page(slug):
             flags=re.DOTALL
         )
         
+        # Remove existing Open Graph and Twitter meta tags to prevent duplicates
+        html = re.sub(r'<meta property="og:.*?>', '', html, flags=re.DOTALL)
+        html = re.sub(r'<meta name="twitter:.*?>', '', html, flags=re.DOTALL)
+
         # Inject Open Graph meta tags và personalized data vào head
         og_tags = f'''
     <!-- Open Graph / Facebook / Messenger -->
