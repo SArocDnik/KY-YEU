@@ -1,75 +1,103 @@
-# 🎓 Kỷ Yếu Số - Yearbook 2026
+# 🎓 Digital Yearbook & Invitation Platform (Kỷ Yếu Online)
 
-Chào mừng đến với dự án **Kỷ Yếu Số** (Digital Yearbook) của lớp 12 Tin. Đây là một website tương tác hiện đại, mang phong cách Cyberpunk, giúp lưu giữ những kỷ niệm đẹp nhất của tuổi học trò.
+Một nền tảng web tạo thiệp mời kỷ yếu online với khả năng cá nhân hóa cao, hỗ trợ xem trước (Open Graph) cực đẹp khi chia sẻ lên mạng xã hội (Facebook, Zalo).
+
+![Demo Admin Panel](https://placehold.co/600x400/161b22/58a6ff?text=Admin+Panel+Preview)
 
 ## ✨ Tính Năng Nổi Bật
 
-### 1. 🎵 Trải Nghiệm Âm Nhạc
-- Nhạc nền tự động phát (Autoplay) với cơ chế fallback thông minh.
-- Nút bật/tắt (Toggle) nổi bật góc màn hình.
-- Tự động lặp lại (Loop).
+### 1. 💌 Thiệp Mời Cá Nhân Hóa (Personalized Links)
+- Tạo đường dẫn riêng cho từng người nhận: `domain.com/p/ten-nguoi-nhan`.
+- **Dynamic Open Graph:** Tùy chỉnh ảnh nền (thumbnail), tiêu đề và lời nhắn hiển thị trên Messenger/Facebook cho từng link.
+- Hỗ trợ tải ảnh lên server hoặc dùng URL ảnh ngoài (Imgur, Cloudinary).
 
-### 2. 📱 Giao Diện Responsive (Mobile-First)
-- Tối ưu hóa hoàn toàn cho điện thoại di động và máy tính bảng.
-- **Timeline**: Bố cục khoa học, không bị chồng chéo trên màn hình nhỏ.
-- **Navigation**: Menu điều hướng dính (Sticky Header) tiện lợi.
+### 2. 🛠️ Admin Panel Mạnh Mẽ (`/admin`)
+- Giao diện Dark Mode hiện đại, dễ sử dụng.
+- **Quản lý Link:** Tạo, Xem, Sửa, Xóa link.
+- **Template Lời Chúc:** Lưu các mẫu lời chúc hay để tái sử dụng nhanh.
+- **Live Preview:** Xem trước ảnh upload ngay lập tức.
 
-### 3. ✍️ Lưu Bút Số (Digital Guestbook)
-- Gửi lời nhắn chúc mừng tới cả lớp.
-- **Backend**: Sử dụng Python Flask lưu trữ dữ liệu vào file `guestbook.json` (bền vững, không mất khi tải lại trang).
-- **Discord Integration**: Tự động bắn thông báo về kênh Discord của lớp khi có lưu bút mới.
-- **Profanity Filter**: Hệ thống tự động chặn các từ ngữ không phù hợp (Tiếng Việt & Tiếng Anh).
+### 3. 📒 Lưu Bút Kỹ Thuật Số (Guestbook)
+- Mọi người có thể để lại lời nhắn chung cho cả lớp.
+- **Discord Notification:** Tự động bắn thông báo về Discord khi có tin nhắn mới.
+- Hỗ trợ lọc từ ngữ không phù hợp (Profanity Filter).
 
-### 4. 🎨 Hiệu Ứng Visual
-- **Tech Stack**: HTML5, Tailwind CSS, Anime.js.
-- Hiệu ứng gõ phím (Typing effect), đếm ngược (Countdown), và các animation mượt mà.
+### 4. 🎵 Trải Nghiệm Người Dùng
+- **Background Music:** Nhạc nền tự động phát (hoặc chờ tương tác) với trình phát nhạc tùy chỉnh.
+- **Typing Effect:** Hiệu ứng gõ chữ lời chào ấn tượng.
+- **Responsive:** Hiển thị tốt trên cả Mobile và Desktop.
 
 ---
 
-## 🚀 Hướng Dẫn Cài Đặt & Chạy
+## 🛠️ Cài Đặt & Chạy Local
 
-### Yêu cầu hệ thống
-- Python 3.x đã được cài đặt.
-- Thư viện Flask (`pip install flask`).
+### Yêu cầu
+- Python 3.8+
+- Git
 
 ### Các bước thực hiện
 
-1. **Chuẩn bị môi trường**:
-   Mở terminal tại thư mục dự án và cài đặt thư viện cần thiết:
+1. **Clone dự án:**
    ```bash
-   pip install flask
+   git clone https://github.com/your-username/KY-YEU-main.git
+   cd KY-YEU-main
    ```
 
-2. **Khởi chạy Server**:
+2. **Cài đặt thư viện:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Cấu hình môi trường (Tùy chọn):**
+   - Mặc định hệ thống sẽ dùng file JSON (`guestbook.json`, `personalized_links.json`) để lưu dữ liệu.
+   - Nếu muốn dùng **MongoDB Atlas**, set biến môi trường:
+     ```bash
+     export MONGO_URI="mongodb+srv://..."
+     ```
+
+4. **Chạy ứng dụng:**
    ```bash
    python app.py
    ```
-   *Server sẽ chạy tại địa chỉ: `http://localhost:5000`*
-
-3. **Truy cập Website**:
-   Mở trình duyệt và vào địa chỉ `http://localhost:5000` để trải nghiệm đầy đủ tính năng (Lưu bút, Nhạc, v.v.).
+   - Web sẽ chạy tại: `http://localhost:1000`
+   - Admin Panel: `http://localhost:1000/admin`
 
 ---
 
-## 📂 Cấu Trúc Dự Án
+## 🚀 Triển Khai (Deployment)
 
-```text
-KY YEU/
-├── app.py              # Backend Server (Flask) - Xử lý API, Discord, Filter
-├── guestbook.json      # Database lưu trữ tin nhắn (JSON)
-├── index.html          # Giao diện chính (HTML/JS/CSS)
-├── README.md           # Tài liệu hướng dẫn
-└── MUSIC/              # Thư mục chứa file nhạc
+Dự án đã được cấu hình sẵn để chạy tốt trên **Vercel** (Serverless Function).
+
+### Cấu trúc file quan trọng
+- `app.py`: Backend chính (Flask).
+- `index.html`: Giao diện trang chủ & trang cá nhân.
+- `admin.html`: Giao diện trang quản trị.
+- `static/`: Chứa file tĩnh (nhạc, ảnh mặc định).
+- `vercel.json`: Cấu hình cho Vercel.
+
+### Lưu ý khi deploy
+1. **File Upload:** Trên môi trường Serverless (Vercel), file upload vào folder `/uploads` sẽ bị mất sau khi function restart.
+   - 👉 **Khuyến nghị:** Sử dụng tính năng "Dùng URL ảnh" trong Admin Panel để ảnh hiển thị ổn định lâu dài.
+2. **MongoDB:** Nên kết nối MongoDB Atlas để dữ liệu không bị mất khi redeploy code.
+
+---
+
+## 🧩 Cấu Trúc Dự Án
+
+```
+KY-YEU-main/
+├── app.py                  # Core Logic (API, Routing, DB)
+├── admin.html              # Admin Frontend
+├── index.html              # User Frontend
+├── requirements.txt        # Python dependencies
+├── vercel.json             # Vercel config
+├── static/                 # Static assets
+│   └── music.mp3           # Background music
+├── uploads/                # Temp upload folder
+├── guestbook.json          # Local DB (Guestbook)
+├── personalized_links.json # Local DB (Links)
+└── message_templates.json  # Local DB (Templates)
 ```
 
-## 🛠️ API Endpoints
-
-- **GET** `/api/messages`: Lấy danh sách lưu bút.
-- **POST** `/api/messages`: Gửi lưu bút mới.
-  - *Body*: `{ "name": "...", "msg": "..." }`
-  - *Check*: Validate dữ liệu & Kiểm tra từ ngữ xấu.
-- **POST** `/api/seed`: (Ẩn) Tạo dữ liệu mẫu.
-
 ---
-
-*"Thanh xuân giống như một cơn mưa rào, dù cho bạn từng bị cảm lạnh vì tắm mưa, bạn vẫn muốn được đắm mình trong cơn mưa ấy lần nữa."*
+**Developed with ❤️ for Yearbook 2026**
