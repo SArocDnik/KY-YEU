@@ -536,8 +536,9 @@ def personalized_page(slug):
         if og_image_url and not og_image_url.startswith('http'):
             og_image_url = f"{base_url}{og_image_url}"
         else:
-            # Default image nếu không có
-            og_image_url = f"{base_url}/static/default-og.jpg"
+            # Default image: Use a public reliable placeholder because 'static/default-og.jpg' does not exist
+            # This fixes the "Invalid Content Type" error on FB Debugger
+            og_image_url = "https://placehold.co/1200x630/0d1117/58a6ff/png?text=Yearbook+2026"
         
         # Tạo OG title: Sử dụng Page Title đã custom trong Admin
         og_title = link.get('page_title')
