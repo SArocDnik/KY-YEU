@@ -526,7 +526,12 @@ def personalized_page(slug):
             html = f.read()
         
         # Tạo URL đầy đủ cho ảnh
-        base_url = request.host_url.rstrip('/')
+        # Fix: Force HTTPS on Vercel/Production for Facebook Crawler
+        if IS_VERCEL or request.headers.get('X-Forwarded-Proto') == 'https':
+            base_url = f"https://{request.host}"
+        else:
+            base_url = request.host_url.rstrip('/')
+            
         og_image_url = link.get('og_image', '')
         if og_image_url and not og_image_url.startswith('http'):
             og_image_url = f"{base_url}{og_image_url}"
@@ -545,10 +550,14 @@ def personalized_page(slug):
         # Full URL của trang
         og_url = f"{base_url}/p/{slug}"
         
-        # Thay thế tiêu đề trang
-        html = html.replace(
-            '<title>Thiệp Mời Kỷ Yếu - 12 Chuyên Tin</title>',
-            f'<title>{link["page_title"]}</title>'
+        # Thay thế tiêu đề trang (Dùng Regex để handle whitespace)
+        import re
+        html = re.sub(
+            r'<title>.*?</title>',
+            f'<title>{link["page_title"]}</title>',
+            html,
+            count=1,
+            flags=re.DOTALL
         )
         
         # Inject Open Graph meta tags và personalized data vào head
