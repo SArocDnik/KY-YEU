@@ -575,7 +575,6 @@ def personalized_page(slug):
     <meta property="og:image" content="{og_image_url}">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="fb:app_id" content=""> 
     <meta property="og:locale" content="vi_VN">
     
     <!-- Twitter Card -->
