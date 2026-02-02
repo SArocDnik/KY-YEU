@@ -376,6 +376,7 @@
 
         // --- LINKS ---
         let currentImageMode = 'upload'; // 'upload' or 'url'
+        let editingSlug = null; // Track edit mode
 
         function switchImageTab(mode) {
             currentImageMode = mode;
@@ -486,6 +487,29 @@
                 og_image: ogImage
             };
 
+            // EDIT MODE logic
+            if (editingSlug) {
+                try {
+                    const res = await fetch(`${API_BASE}/api/links/${editingSlug}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    const result = await res.json();
+                    if (res.ok) {
+                        showStatus('success', 'Đã cập nhật link thành công!');
+                        cancelEdit(); // Reset form
+                        loadLinks();
+                    } else {
+                        showStatus('error', result.error || 'Lỗi cập nhật link');
+                    }
+                } catch (err) {
+                    showStatus('error', 'Lỗi kết nối server');
+                }
+                return;
+            }
+
+            // CREATE MODE logic
             try {
                 const res = await fetch(`${API_BASE}/api/links`, {
                     method: 'POST',
@@ -508,6 +532,93 @@
                 showStatus('error', 'Không thể kết nối server');
             }
         });
+
+        // --- EDIT FUNCTIONS ---
+        function editLink(slug) {
+            // Find link data
+            fetch(`${API_BASE}/api/links`)
+                .then(res => res.json())
+                .then(links => {
+                    const link = links.find(l => l.slug === slug);
+                    if (!link) return;
+
+                    // Populate form
+                    document.getElementById('senderName').value = link.sender_name || '';
+                    document.getElementById('recipientName').value = link.recipient_name || '';
+                    document.getElementById('customSlug').value = link.slug;
+                    document.getElementById('pageTitle').value = link.page_title || '';
+                    document.getElementById('message').value = link.message || '';
+                    document.getElementById('subtitle').value = link.subtitle || '';
+
+                    // Handle Image
+                    if (link.og_image) {
+                        document.getElementById('uploadedImageUrl').value = link.og_image;
+                        if (link.og_image.startsWith('http')) {
+                            // External url likely
+                            document.getElementById('imageUrlInput').value = link.og_image;
+                            switchImageTab('url');
+                        } else {
+                            // Upload likely
+                            document.getElementById('previewImg').src = link.og_image;
+                            document.getElementById('imagePreview').classList.remove('hidden');
+                            switchImageTab('upload');
+                        }
+                    }
+
+                    // Set Edit Mode UI
+                    editingSlug = slug;
+                    document.getElementById('customSlug').disabled = true; // Disable slug editing
+                    document.getElementById('customSlug').classList.add('opacity-50', 'cursor-not-allowed');
+
+                    const submitBtn = document.querySelector('#createForm button[type="submit"]');
+                    submitBtn.classList.remove('bg-success', 'hover:bg-success/80');
+                    submitBtn.classList.add('bg-accent', 'hover:bg-accent/80');
+                    submitBtn.innerHTML = `
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        Lưu Thay Đổi
+                    `;
+
+                    // Add/Show Cancel Button if not exists
+                    let cancelBtn = document.getElementById('cancelEditBtn');
+                    if (!cancelBtn) {
+                        cancelBtn = document.createElement('button');
+                        cancelBtn.id = 'cancelEditBtn';
+                        cancelBtn.type = 'button';
+                        cancelBtn.onclick = cancelEdit;
+                        cancelBtn.className = 'px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg transition';
+                        cancelBtn.textContent = 'Hủy';
+                        submitBtn.parentNode.insertBefore(cancelBtn, submitBtn.nextSibling);
+                    } else {
+                        cancelBtn.classList.remove('hidden');
+                    }
+
+                    // Scroll to form
+                    document.getElementById('createForm').scrollIntoView({ behavior: 'smooth' });
+                    showStatus('warning', 'Đang ở chế độ sửa link. Nhấn "Hủy" để thoát.');
+                });
+        }
+
+        function cancelEdit() {
+            editingSlug = null;
+            document.getElementById('createForm').reset();
+
+            // Reset UI
+            document.getElementById('customSlug').disabled = false;
+            document.getElementById('customSlug').classList.remove('opacity-50', 'cursor-not-allowed');
+            document.getElementById('imagePreview').classList.add('hidden');
+            document.getElementById('uploadedImageUrl').value = '';
+
+            const submitBtn = document.querySelector('#createForm button[type="submit"]');
+            submitBtn.classList.remove('bg-accent', 'hover:bg-accent/80');
+            submitBtn.classList.add('bg-success', 'hover:bg-success/80');
+            submitBtn.innerHTML = `
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                Tạo Link
+            `;
+
+            const cancelBtn = document.getElementById('cancelEditBtn');
+            if (cancelBtn) cancelBtn.classList.add('hidden');
+        }
 
         async function loadLinks() {
             const container = document.getElementById('linksList');
@@ -543,15 +654,19 @@
                             <div class="flex items-center gap-2 shrink-0">
                                 <button onclick="copyLink('${link.slug}')" 
                                     class="px-4 py-2 bg-accent/10 hover:bg-accent/20 text-accent rounded-lg text-sm font-medium transition flex items-center gap-2">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
-                                    </svg>
                                     Copy
                                 </button>
                                 <a href="/p/${link.slug}" target="_blank"
                                     class="px-4 py-2 bg-success/10 hover:bg-success/20 text-success rounded-lg text-sm font-medium transition">
                                     Xem
                                 </a>
+                                <!-- Edit Button -->
+                                <button onclick="editLink('${link.slug}')"
+                                    class="px-3 py-2 bg-func/10 hover:bg-func/20 text-func rounded-lg text-sm transition">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                </button>
                                 <button onclick="deleteLink('${link.slug}')"
                                     class="px-3 py-2 bg-keyword/10 hover:bg-keyword/20 text-keyword rounded-lg text-sm transition">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

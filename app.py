@@ -184,6 +184,30 @@ class LinkStore:
         
         return link_data
     
+    def update(self, slug, data):
+        """Cập nhật link đã tồn tại"""
+        if self.use_mongo:
+            # Chỉ update các field được phép
+            update_fields = {k: v for k, v in data.items() if k in ['recipient_name', 'sender_name', 'message', 'page_title', 'subtitle', 'og_image']}
+            result = self.collection.update_one({'slug': slug}, {'$set': update_fields})
+            return result.modified_count > 0 or result.matched_count > 0
+        else:
+            links = self.get_all()
+            for link in links:
+                if link.get('slug') == slug:
+                    # Update fields
+                    if 'recipient_name' in data: link['recipient_name'] = data['recipient_name']
+                    if 'sender_name' in data: link['sender_name'] = data['sender_name']
+                    if 'message' in data: link['message'] = data['message']
+                    if 'page_title' in data: link['page_title'] = data['page_title']
+                    if 'subtitle' in data: link['subtitle'] = data['subtitle']
+                    if 'og_image' in data: link['og_image'] = data['og_image']
+                    
+                    with open(self.local_file, 'w', encoding='utf-8') as f:
+                        json.dump(links, f, ensure_ascii=False, indent=2)
+                    return True
+            return False
+    
     def get_all(self):
         """Lấy tất cả links"""
         if self.use_mongo:
@@ -397,6 +421,18 @@ def create_link():
             og_image or None
         )
         return jsonify({"status": "success", "link": link})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/links/<slug>', methods=['PUT'])
+def update_link(slug):
+    """Cập nhật link đã tồn tại"""
+    try:
+        data = request.json
+        success = link_store.update(slug, data)
+        if success:
+            return jsonify({"status": "success", "slug": slug})
+        return jsonify({"error": "Link không tồn tại"}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
