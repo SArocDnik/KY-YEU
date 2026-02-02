@@ -532,13 +532,16 @@ def personalized_page(slug):
         else:
             base_url = request.host_url.rstrip('/')
             
-        og_image_url = link.get('og_image', '')
-        if og_image_url and not og_image_url.startswith('http'):
-            og_image_url = f"{base_url}{og_image_url}"
-        else:
-            # Default image: Use a reliable static image from Unsplash to ensure FB Crawler accepts it
-            # placehold.co was rejected by FB.
+        og_image_url = link.get('og_image')
+        
+        # Logic Fix: Prioritize user's URL. If empty -> Default. If Local -> Prepend Base URL.
+        if not og_image_url:
+            # Default fallback if no image provided
             og_image_url = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1200&auto=format&fit=crop"
+        elif not og_image_url.startswith('http'):
+            # Relative path (Local upload) -> Prepend Domain
+            og_image_url = f"{base_url}{og_image_url}"
+        # else: Absolute URL (Imgur/Cloudinary) -> Keep as is
         
         # Tạo OG title: Sử dụng Page Title đã custom trong Admin
         og_title = link.get('page_title')
