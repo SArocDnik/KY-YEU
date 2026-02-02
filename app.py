@@ -539,10 +539,13 @@ def personalized_page(slug):
             # Default image nếu không có
             og_image_url = f"{base_url}/static/default-og.jpg"
         
-        # Tạo OG title theo format mong muốn
-        sender = link.get('sender_name', 'Bạn bè')
-        recipient = link.get('recipient_name', '')
-        og_title = f"Thiệp mời: Kỷ Yếu - {sender} gửi {recipient} | Thiệp Online"
+        # Tạo OG title: Sử dụng Page Title đã custom trong Admin
+        og_title = link.get('page_title')
+        # Fallback (phòng trường hợp cũ không có field này)
+        if not og_title:
+             sender = link.get('sender_name', 'Bạn bè')
+             recipient = link.get('recipient_name', '')
+             og_title = f"Thiệp mời: Kỷ Yếu - {sender} gửi {recipient} | Thiệp Online"
         
         # Subtitle cho description
         og_description = link.get('subtitle', 'Thanh xuân như một cơn mưa rào. Hãy cùng mình lưu giữ lại những khoảnh khắc rực rỡ nhất của tuổi học trò trước khi chúng ta mỗi người một ngả...')
