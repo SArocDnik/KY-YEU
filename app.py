@@ -534,14 +534,17 @@ def personalized_page(slug):
             
         og_image_url = link.get('og_image')
         
-        # Logic Fix: Prioritize user's URL. If empty -> Default. If Local -> Prepend Base URL.
+        # Logic Fix V2: Handle User Input more robustly (e.g. missing 'https://')
         if not og_image_url:
-            # Default fallback if no image provided
+            # Case 1: Empty -> Default Unsplash
             og_image_url = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1200&auto=format&fit=crop"
-        elif not og_image_url.startswith('http'):
-            # Relative path (Local upload) -> Prepend Domain
+        elif og_image_url.startswith('/'):
+            # Case 2: Local path (uploaded via our API) -> Prepend Base URL
             og_image_url = f"{base_url}{og_image_url}"
-        # else: Absolute URL (Imgur/Cloudinary) -> Keep as is
+        elif not og_image_url.startswith('http'):
+            # Case 3: External link but missing protocol (e.g. "imgur.com/...") -> Add https://
+            og_image_url = f"https://{og_image_url}"
+        # Case 4: Absolute URL (starts with http/https) -> Keep as is
         
         # Tạo OG title: Sử dụng Page Title đã custom trong Admin
         og_title = link.get('page_title')
@@ -562,6 +565,10 @@ def personalized_page(slug):
         end_marker = '<!-- Tailwind CSS -->'
         
         if start_marker in html and end_marker in html:
+            # Escape & for HTML attributes to prevent breaking signed URLs (fbcdn)
+            # Facebook Crawler requires strict HTML entity encoding for ampersands in attributes
+            og_image_url_escaped = og_image_url.replace('&', '&amp;')
+            
             parts = html.split(start_marker)
             pre_part = parts[0]
             # Find the rest after the start marker
@@ -575,7 +582,7 @@ def personalized_page(slug):
     <meta property="og:url" content="{og_url}">
     <meta property="og:title" content="{og_title}">
     <meta property="og:description" content="{og_description}">
-    <meta property="og:image" content="{og_image_url}">
+    <meta property="og:image" content="{og_image_url_escaped}">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:locale" content="vi_VN">
@@ -584,7 +591,7 @@ def personalized_page(slug):
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{og_title}">
     <meta name="twitter:description" content="{og_description}">
-    <meta name="twitter:image" content="{og_image_url}">
+    <meta name="twitter:image" content="{og_image_url_escaped}">
     
     <script>
         window.PERSONALIZED_DATA = {{
