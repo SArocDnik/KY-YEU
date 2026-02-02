@@ -1301,8 +1301,15 @@
             // Use personalized message if available
             if (window.PERSONALIZED_DATA && window.PERSONALIZED_DATA.message) {
                 const recipientName = window.PERSONALIZED_DATA.recipientName || '';
-                const customMessage = window.PERSONALIZED_DATA.message || '';
-                textToType = `Chào ${recipientName}! ${customMessage}`;
+                let customMessage = window.PERSONALIZED_DATA.message || '';
+                
+                // Fix: Remove forced "Chào..." prefix to avoid duplication
+                // Feature: Support <tên> placeholder replacement
+                if (customMessage) {
+                     textToType = customMessage.replace(/<tên>|{name}|\[name\]/gi, recipientName);
+                } else {
+                     textToType = `Chào ${recipientName}!`;
+                }
             }
 
             const typingElement = document.getElementById('typing-text');
@@ -1426,7 +1433,9 @@
         }
     </script>
     <!-- MUSIC CONTROLS & AUDIO -->
-    <audio id="bg-music" loop autoplay>
+    <!-- MUSIC CONTROLS & AUDIO -->
+    <!-- Removed autoplay to rely on manual trigger in enterSite() for better browser support -->
+    <audio id="bg-music" loop>
         <source src="/MUSIC/music.mp3" type="audio/mpeg">
     </audio>
 
