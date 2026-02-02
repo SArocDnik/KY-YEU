@@ -552,24 +552,21 @@ def personalized_page(slug):
         
         # Full URL của trang
         og_url = f"{base_url}/p/{slug}"
-        
-        # Thay thế tiêu đề trang (Dùng Regex để handle whitespace)
-        import re
-        html = re.sub(
-            r'<title>.*?</title>',
-            f'<title>{link["page_title"]}</title>',
-            html,
-            count=1,
-            flags=re.DOTALL
-        )
-        
-        # Remove existing Open Graph and Twitter meta tags to prevent duplicates
-        html = re.sub(r'<meta property="og:.*?>', '', html, flags=re.DOTALL)
-        html = re.sub(r'<meta name="twitter:.*?>', '', html, flags=re.DOTALL)
 
-        # Inject Open Graph meta tags và personalized data vào head
-        og_tags = f'''
-    <!-- Open Graph / Facebook / Messenger -->
+        # Clean old tags: Replace everything between default markers
+        start_marker = '<!-- Default Open Graph / Facebook / Messenger -->'
+        end_marker = '<!-- Tailwind CSS -->'
+        
+        if start_marker in html and end_marker in html:
+            parts = html.split(start_marker)
+            pre_part = parts[0]
+            # Find the rest after the start marker
+            rest = parts[1]
+            if end_marker in rest:
+                 post_part = rest.split(end_marker)[1]
+                 
+                 # New Dynamic Block
+                 new_block = f'''{start_marker}
     <meta property="og:type" content="website">
     <meta property="og:url" content="{og_url}">
     <meta property="og:title" content="{og_title}">
@@ -577,6 +574,8 @@ def personalized_page(slug):
     <meta property="og:image" content="{og_image_url}">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
+    <meta property="fb:app_id" content=""> 
+    <meta property="og:locale" content="vi_VN">
     
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
@@ -593,8 +592,21 @@ def personalized_page(slug):
             subtitle: "{link.get('subtitle', '').replace('"', '\\"')}"
         }};
     </script>
-    </head>'''
-        html = html.replace('</head>', og_tags)
+    {end_marker}'''
+                 html = pre_part + new_block + post_part
+        else:
+            # Fallback if markers missing (shouldn't happen)
+            pass
+
+        # Thay thế tiêu đề trang (Dùng Regex để handle whitespace)
+        import re
+        html = re.sub(
+            r'<title>.*?</title>',
+            f'<title>{link["page_title"]}</title>',
+            html,
+            count=1,
+            flags=re.DOTALL
+        )
         
         return html
     except Exception as e:
