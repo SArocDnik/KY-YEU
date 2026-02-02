@@ -2,8 +2,6 @@
 
 Một nền tảng web tạo thiệp mời kỷ yếu online với khả năng cá nhân hóa cao, hỗ trợ xem trước (Open Graph) cực đẹp khi chia sẻ lên mạng xã hội (Facebook, Zalo).
 
-![Demo Admin Panel](https://placehold.co/600x400/161b22/58a6ff?text=Admin+Panel+Preview)
-
 ## ✨ Tính Năng Nổi Bật
 
 ### 1. 💌 Thiệp Mời Cá Nhân Hóa (Personalized Links)
@@ -101,3 +99,4 @@ KY-YEU-main/
 
 ---
 **Developed with ❤️ for Yearbook 2026**
+
