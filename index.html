@@ -1437,7 +1437,7 @@
     <!-- Removed autoplay to rely on manual trigger in enterSite() for better browser support -->
     <!-- MOVED TO STATIC FOLDER -->
     <audio id="bg-music" loop>
-        <source src="/static/music.mp3" type="audio/mpeg">
+        <source src="/static/music.mp3?v=2" type="audio/mpeg">
     </audio>
 
     <div class="fixed bottom-6 right-6 z-50 music-container">
@@ -1502,7 +1502,7 @@
             const slider = document.getElementById('volume-slider');
 
             // Initialize Volume
-            audio.volume = 0.5;
+            audio.volume = 0.3;
 
             // Handle Volume Change
             slider.addEventListener('input', (e) => {
@@ -1651,4 +1651,3 @@
 </body>
 
 </html>
-
