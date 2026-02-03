@@ -573,7 +573,8 @@ def personalized_page(slug):
         # Logic Fix V2: Handle User Input more robustly (e.g. missing 'https://')
         if not og_image_url:
             # Case 1: Empty -> Default Unsplash
-            og_image_url = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1200&auto=format&fit=crop"
+            # Case 1: Empty -> Default
+            og_image_url = "https://i.pinimg.com/1200x/f0/e7/25/f0e7252834c8507742d64f9397d926dc.jpg"
         elif og_image_url.startswith('/'):
             # Case 2: Local path (uploaded via our API) -> Prepend Base URL
             og_image_url = f"{base_url}{og_image_url}"
@@ -588,10 +589,10 @@ def personalized_page(slug):
         if not og_title:
              sender = link.get('sender_name', 'Bạn bè')
              recipient = link.get('recipient_name', '')
-             og_title = f"Thiệp mời: Kỷ Yếu - {sender} gửi {recipient} | Thiệp Online"
+             og_title = f"{sender} gửi {recipient} | Amadeus System: Initializing Yearbook Protocol..."
         
         # Subtitle cho description
-        og_description = link.get('subtitle', 'Thanh xuân như một cơn mưa rào. Hãy cùng mình lưu giữ lại những khoảnh khắc rực rỡ nhất của tuổi học trò trước khi chúng ta mỗi người một ngả...')
+        og_description = link.get('subtitle', 'これを読んでくださっている皆様、この間ずっと変わらぬご支援とご協力をいただき、ありがとうございます。')
         
         # Full URL của trang
         og_url = f"{base_url}/p/{slug}"
